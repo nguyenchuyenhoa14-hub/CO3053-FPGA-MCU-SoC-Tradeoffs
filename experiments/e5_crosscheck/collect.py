@@ -259,11 +259,92 @@ def charts(d):
     return [p for p in out if p]
 
 
+# ---------------------------------------------------------------- macro LaTeX cho report/slide
+def vn(v, nd=1):
+    """So kieu Viet: dau phay thap phan, khoang hep ngan cach hang nghin."""
+    s = f"{v:,.{nd}f}"
+    return s.replace(",", "\\,").replace(".", "{,}")
+
+
+def write_tex(d):
+    m = {}
+    NA = r"\chuado{}"
+    mcu = d["mcu"]
+    best = None
+    if mcu:
+        ok = [v for v in mcu["variants"] if v["correct"]]
+        best = max(ok, key=lambda v: v["ksps"]) if ok else None
+        shift = next((v for v in mcu["variants"] if v["variant"] == "c_shift_loop"), None)
+        lat = {r["scenario"]: r for r in mcu["irq_latency"]}
+        m["McuClock"] = str(mcu["clock_mhz"])
+        if best:
+            m["McuBestVariant"] = best["variant"].replace("_", r"\_")
+            m["McuBestCps"] = vn(best["cycles_per_sample"])
+            m["McuBestMsps"] = vn(best["ksps"] / 1000, 2)
+            m["McuEff"] = vn(best["ksps"] * 1e3 / (mcu["clock_mhz"] * 1e6 / d["taps"]) * 100, 0)
+        if shift:
+            m["McuShiftCps"] = vn(shift["cycles_per_sample"])
+        if "fir_load" in lat:
+            m["McuIrqMin"] = vn(lat["fir_load"]["min_ns"], 0)
+            m["McuIrqMax"] = vn(lat["fir_load"]["max_ns"], 0)
+            m["McuIrqRange"] = m["McuIrqMin"] + "–" + m["McuIrqMax"]
+        if "fir_load_plus_higher_prio_isr_20us" in lat:
+            m["McuIrqHogMax"] = vn(lat["fir_load_plus_higher_prio_isr_20us"]["max_ns"] / 1000, 1)
+
+    pi = [r for r in d["tp"] if r[0] == "SoC"]
+    pi_best = max((r[2] for r in pi), default=None)
+    if pi_best:
+        m["PiBestMsps"] = vn(pi_best, 1)
+
+    fpga = next((r for r in d["tp"] if r[0] == "FPGA" and r[3] in ("đo", "mô phỏng")), None)
+    if fpga:
+        m["FpgaMsps"] = vn(fpga[2], 1)
+        m["FpgaLabel"] = fpga[3]
+    src = d["board"] or d["sim"]
+    if src:
+        lat_c = src.get("latency_cycles") or src["continuous"]["latency_cycles"]
+        m["FpgaLatCycles"] = str(lat_c)
+        m["FpgaLatNs"] = vn(lat_c * 10.0, 0)
+        m["FpgaPass"] = "PASS" if src["pass"] else "FAIL"
+        m["FpgaSpc"] = vn(src["samples_per_cycle"], 2)
+    if d["impl"]:
+        o, t = d["impl"]["fir16_ooc"], d["impl"]["top_100mhz"]
+        m["FpgaFmax"] = vn(o["fmax_mhz_est"], 0)
+        m["FpgaDsp"] = str(o["dsp48e1"])
+        if t["power_total_w"] not in (None, "null"):
+            m["FpgaPower"] = vn(float(t["power_total_w"]), 3)
+    if fpga and pi_best:
+        m["RatioFpgaPi"] = vn(fpga[2] / pi_best, 1)
+    if fpga and best:
+        m["RatioFpgaMcu"] = vn(fpga[2] / (best["ksps"] / 1000), 0)
+
+    for r in d["lat"]:
+        if r[0] == "SoC" and "có tải" in r[1]:
+            key = "LinuxRtMax" if "RT" in r[1] else "LinuxStdMax"
+            m[key] = vn(r[2] / 1000, 0)
+
+    keys = ["McuClock", "McuBestVariant", "McuBestCps", "McuBestMsps", "McuEff", "McuShiftCps",
+            "McuIrqMin", "McuIrqMax", "McuIrqRange", "McuIrqHogMax", "PiBestMsps", "FpgaMsps", "FpgaLabel",
+            "FpgaLatCycles", "FpgaLatNs", "FpgaPass", "FpgaSpc", "FpgaFmax", "FpgaDsp", "FpgaPower",
+            "RatioFpgaPi", "RatioFpgaMcu", "LinuxStdMax", "LinuxRtMax"]
+    lines = ["% TU DONG SINH boi experiments/e5_crosscheck/collect.py - KHONG SUA TAY",
+             "% So chua do hien \\chuado{} (report dinh nghia macro nay)."]
+    for k in keys:
+        lines.append(f"\\newcommand{{\\exp{k}}}{{{m.get(k, NA)}}}")
+    lines.append(f"\\newcommand{{\\expHaveMcu}}{{{'1' if mcu else '0'}}}")
+    lines.append(f"\\newcommand{{\\expHavePi}}{{{'1' if pi_best else '0'}}}")
+    path = os.path.join(RES, "numbers.tex")
+    with open(path, "w") as f:
+        f.write("\n".join(lines) + "\n")
+    return path
+
+
 def main():
     d = gather("--x86" in sys.argv)
     xc = crosscheck(d)
     md = write_md(d, xc)
     print(f"-> {os.path.relpath(md, ROOT)}")
+    print(f"-> {os.path.relpath(write_tex(d), ROOT)}")
     try:
         for p in charts(d):
             print(f"-> {os.path.relpath(p, ROOT)}")
