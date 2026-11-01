@@ -1,0 +1,9 @@
+{
+  "platform": "ARM Cortex-M4 / MCU",
+  "clock_mhz": 168,
+  "cycles_per_sample": 36,
+  "latency_ns": 214.28,
+  "throughput_msps": 4.66,
+  "power_watts": 0.25,
+  "energy_msamples_per_joule": 18.64
+}
