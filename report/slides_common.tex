@@ -1,0 +1,14 @@
+% ============================================================================
+% Macro dung chung cho cac ban slide (nap sau \usetheme)
+% ============================================================================
+\renewcommand{\arraystretch}{1.25}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+% Khoi "con so quyet dinh"
+\newcommand{\soquyetdinh}[1]{%
+  \begin{beamercolorbox}[rounded=true,sep=4pt]{block body}\footnotesize #1\end{beamercolorbox}\vspace{4pt}}
+\setbeamercolor{block body}{bg=black!4,fg=black}
+% Ghi nguon anh tren slide: dang ngan, chu rat nho, gian dong hep
+\useShortCredits
+\renewcommand{\anh}[3][\linewidth]{%
+  \includegraphics[width=#1]{figs/#2}\par\nopagebreak[4]%
+  {\fontsize{4.5}{5.2}\selectfont\textcolor{cInk2}{#3}}\par}

@@ -40,8 +40,23 @@
   \PackageWarning{shared}{Chua co numbers.tex - chay: make -C ../experiments collect}%
   \input{numbers_fallback.tex}}
 
+% So nhap tay (ket_qua.tex): o nao co gia tri se GHI DE so tu dong o tren.
+% \nhap{Ten}{gia tri}: de trong gia tri -> giu nguyen so tu dong / \chuado.
+\newcommand{\nhap}[2]{%
+  \if\relax\detokenize{#2}\relax\else
+    \expandafter\renewcommand\csname exp#1\endcsname{#2}\fi}
+\IfFileExists{ket_qua.tex}{\input{ket_qua.tex}}{}
+
 % Chen chart neu da co, neu chua thi hien khung bao "chua co"
 \newcommand{\chart}[2][\linewidth]{%
   \IfFileExists{\resdir/charts/#2}%
     {\includegraphics[width=#1]{\resdir/charts/#2}}%
     {\fbox{\parbox{0.8\linewidth}{\centering\chuado{}: chưa có \texttt{#2}}}}}
+
+% ---- Hinh anh va plot co ghi nguon ----
+% Anh tu Wikimedia Commons (giay phep mo); plot ve lai tu so lieu da cong bo.
+\input{figs/credits.tex}
+% \anh[rong]{duong dan trong figs/}{dong ghi nguon} : hinh + dong nguon nho ngay ben duoi
+\newcommand{\anh}[3][\linewidth]{%
+  \includegraphics[width=#1]{figs/#2}\par\nopagebreak[4]\vspace{1pt}%
+  {\tiny\textcolor{cInk2}{#3}}\par}

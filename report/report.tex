@@ -70,25 +70,41 @@ Giá linh kiện của MCU và FPGA là giá chip, còn giá của Raspberry Pi 
 \item \FPGA{}: một mảng LUT, flip-flop, khối DSP và BRAM có thể nối lại tùy ý. Thuật toán được ``trải ra không gian'': mỗi phép nhân có một khối nhân riêng chạy song song, nên thông lượng có thể đạt 1 mẫu/chu kỳ và độ trễ cố định theo số chu kỳ. Cái giá là mọi chức năng đều phải tự mô tả ở mức phần cứng.
 \end{itemize}
 
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[b]{0.31\linewidth}\centering
+  \anh{img/mcu_stm32f103.jpg}{\creditMcu}
+  \small (a) \MCU: board STM32F103C8T6
+\end{minipage}\hfill
+\begin{minipage}[b]{0.31\linewidth}\centering
+  \anh{img/soc_rpi4.jpg}{\creditRpi}
+  \small (b) \SoC: Raspberry Pi 4
+\end{minipage}\hfill
+\begin{minipage}[b]{0.31\linewidth}\centering
+  \anh{img/fpga_artix7.jpg}{\creditArtix}
+  \small (c) \FPGA: Artix-7 XC7A100T
+\end{minipage}
+\caption{Ba nền tảng nhóm dùng (cùng họ chip, ảnh minh họa không phải board của nhóm).}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.6\linewidth}\centering
+  \anh{img/fpga_cell.png}{\creditCell}
+\end{minipage}
+\caption{Một logic cell của FPGA: LUT thực hiện hàm logic bất kỳ, bộ cộng có đường nhớ (carry) và flip-flop (DFF). Hàng nghìn cell như vậy, cùng khối DSP và BRAM, được nối lại để tạo ra mạch cho từng thuật toán.}
+\end{figure}
+
 % ============================================================================
 \section{Số liệu từ tài liệu}
 
 \subsection{Hiệu năng}
 
-\begin{table}[h]
-\centering\small
-\begin{tabular}{@{}llllr@{}}
-\toprule
-& Chip & Lõi / xung nhịp & CoreMark & \\
-\midrule
-\MCU & STM32F4 & Cortex-M4, 180 MHz & 608 & \nhan{nguồn}~\cite{st-overview}\\
-\MCU & STM32H743 & Cortex-M7, 480 MHz & 2\,424 & \nhan{nguồn}~\cite{st-h743}\\
-\SoC & STM32MP1 & Cortex-A7, 800 MHz & 4\,158 & \nhan{nguồn}~\cite{st-overview}\\
-\SoC & Raspberry Pi 4 & 4×Cortex-A72, 1,8 GHz & 38\,200 (4 lõi) & \nhan{nguồn}~\cite{ob-pi4}\\
-\bottomrule
-\end{tabular}
-\caption{CoreMark (càng cao càng nhanh). Chỉ số này không áp dụng cho FPGA, vì FPGA không chạy chương trình tuần tự.}
-\end{table}
+\begin{figure}[htbp]
+\centering
+\anh[0.85\linewidth]{plots/lit_coremark.png}{Dữ liệu: ST~\cite{st-overview,st-h743}, OpenBenchmarking~\cite{ob-pi4}. Nhóm vẽ lại.}
+\caption{CoreMark (càng cao càng nhanh). Pi 4 là tổng 4 lõi. Chỉ số này không áp dụng cho FPGA, vì FPGA không chạy chương trình tuần tự.}
+\end{figure}
 
 \textbf{Thông lượng MAC.} Bài toán lọc ảnh 3×3 trên video 1080p, 3 kênh màu, 30 khung/giây cần khoảng 1,68 G MAC/s (Lee \& Seshia, mục 8.1).
 \begin{itemize}
@@ -97,20 +113,24 @@ Giá linh kiện của MCU và FPGA là giá chip, còn giá của Raspberry Pi 
 \item Theo Arucu \& Iliev~\cite{arucu}, FIR 27-tap trên Zynq XC7Z020 chạy nhanh hơn Cortex-A9 khoảng 27 lần, và năng lượng mỗi lần chạy thấp hơn khoảng 95–190 lần \nhan{tính, vì công suất CPU là ước tính của tác giả}.
 \end{itemize}
 
-\begin{table}[h]
-\centering\small
-\begin{tabular}{@{}lll@{}}
-\toprule
-Nền tảng & Độ trễ xấu nhất điển hình & \\
-\midrule
-\FPGA & 13,9 ns (tick-to-trade, STAC-T0) & \nhan{nguồn}~\cite{stac}\\
-\MCU{} bare-metal & 1–3 µs & \nhan{nguồn}~\cite{ac6}\\
-\SoC{} Linux PREEMPT\_RT, đã tinh chỉnh & 30–80 µs & \nhan{nguồn}~\cite{ac6}\\
-\SoC{} Linux thường & vài ms & \nhan{nguồn}~\cite{ac6}\\
-\bottomrule
-\end{tabular}
-\caption{Độ trễ xấu nhất theo tài liệu. Các phép đo khác bản chất nhau, chỉ dùng để so bậc độ lớn.}
-\end{table}
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[t]{0.8\linewidth}\centering
+  \anh{plots/lit_mac.png}{Dữ liệu: Lee \& Seshia mục 8.1; datasheet XA Artix-7~\cite{xa7}; giá trị [tính] theo giả thiết trong bài.}
+  \small (a) Nhu cầu của bài lọc video so với năng lực tối đa
+\end{minipage}\par\medskip
+\begin{minipage}[t]{0.8\linewidth}\centering
+  \anh{plots/lit_fir_arucu.png}{Dữ liệu: Arucu \& Iliev, 2025~\cite{arucu}. Nhóm vẽ lại.}
+  \small (b) FIR 27-tap trên FPGA, GPU và CPU
+\end{minipage}
+\caption{(a) MCU không đạt nhu cầu dù hiệu suất 100\%, còn FPGA chỉ dùng vài phần trăm năng lực. (b) FPGA xử lý nhanh nhất và tốn ít công suất nhất trong ba cấu hình.}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\anh[0.85\linewidth]{plots/lit_latency.png}{Dữ liệu: AC6~\cite{ac6} (MCU, Linux), A-Team Insight~\cite{stac} (FPGA). ``Vài ms'' không có số chính xác nên vẽ mờ. Nhóm vẽ lại.}
+\caption{Độ trễ xấu nhất theo tài liệu. Các phép đo khác bản chất nhau (I/O mạng, ngắt, lập lịch), chỉ dùng để so bậc độ lớn.}
+\end{figure}
 
 \subsection{Chi phí và công suất}
 
@@ -127,6 +147,12 @@ Khi nghỉ & 2,43 µA ở chế độ Standby~\cite{st-h743}; STM32U5: 300 nA~\c
 \end{tabularx}
 \caption{Chi phí và công suất. STM32U5 ở chế độ Standby dùng khoảng 1 µW, ít hơn Pi 4 lúc rảnh khoảng 3 triệu lần \nhan{tính, so chip với board}.}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\anh[0.8\linewidth]{plots/lit_idle_power.png}{Dữ liệu: ST~\cite{st-h743}, Arrow~\cite{arrow}, TechFeed~\cite{techfeed}; công suất MCU = dòng × 3,3 V \nhan{tính}. Nhóm vẽ lại.}
+\caption{Công suất khi nghỉ trải trên 6 bậc độ lớn: đây là lý do MCU thống trị thiết bị chạy pin.}
+\end{figure}
 
 % ============================================================================
 \section{Thí nghiệm của nhóm}
@@ -233,6 +259,14 @@ Phần này chọn những lĩnh vực mà mỗi nền tảng gần như là l�
 \item Thiết bị gia dụng và ngoại vi USB như bàn phím, chuột.
 \end{itemize}
 
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.45\linewidth}\centering
+  \anh{img/app_ecu.jpg}{\creditEcu}
+\end{minipage}
+\caption{Một ECU ô tô tháo rời cùng bó dây. Mỗi xe có hàng chục ECU như vậy, phần lớn dựa trên MCU.}
+\end{figure}
+
 \subsection{\SoC: router Wi-Fi và điện thoại}
 
 \textbf{Điều gì quyết định:} cần một hệ điều hành đầy đủ với network stack, \emph{cộng thêm} các khối tăng tốc cố định để đạt hàng Gbit/s mà CPU không phải tự làm.
@@ -253,6 +287,19 @@ Phần này chọn những lĩnh vực mà mỗi nền tảng gần như là l�
 \end{itemize}
 
 \textbf{Các lĩnh vực SoC cũng chiếm ưu thế:} camera IP và camera thông minh (camera chạy được ngay qua V4L2 trên Linux~\cite{appliedee-mpu}), TV và set-top box, gateway IoT, hệ thống giải trí trên xe.
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}[b]{0.42\linewidth}\centering
+  \anh{img/app_router.jpg}{\creditRouter}
+  \small (a) Bộ xử lý mạng Intel IXP422 trên bo mạch router
+\end{minipage}\hspace{0.04\linewidth}%
+\begin{minipage}[b]{0.42\linewidth}\centering
+  \anh{img/app_phone_soc.jpg}{\creditPhone}
+  \small (b) SoC Qualcomm Snapdragon QSD8250 trong điện thoại HTC Desire
+\end{minipage}
+\caption{Hai thế hệ SoC thiết bị mạng và điện thoại: CPU cùng các khối tăng tốc chuyên dụng nằm trên một chip.}
+\end{figure}
 
 \subsection{\FPGA: xử lý tín hiệu song song có I/O tốc độ cao, và tạo mẫu chip}
 
@@ -280,6 +327,14 @@ Phần này chọn những lĩnh vực mà mỗi nền tảng gần như là l�
 \item \emph{Ưu thế dừng ở đâu:} khi số lượng đủ lớn và thuật toán đã ổn định, ASIC rẻ hơn và tiết kiệm điện hơn; đó là lý do điện thoại dùng ISP và modem cứng chứ không dùng FPGA. Với phép tính dấu phẩy động khối lượng lớn, GPU thường thắng.
 \end{itemize}
 
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.32\linewidth}\centering
+  \anh{img/app_ultrasound.jpg}{\creditUltra}
+\end{minipage}
+\caption{Máy siêu âm: đầu dò hàng trăm kênh phải được beamforming theo thời gian thực, một ứng dụng điển hình của FPGA~\cite{kou}. Ảnh minh họa thiết bị, không khẳng định model này dùng FPGA.}
+\end{figure}
+
 \subsection{Phương án lai CPU + FPGA: ADAS và điều khiển công nghiệp}\label{sec:hybrid}
 
 Có những bài toán cần \emph{cả} hệ điều hành phong phú \emph{lẫn} timing hoặc xử lý song song cứng.
@@ -288,6 +343,14 @@ Có những bài toán cần \emph{cả} hệ điều hành phong phú \emph{l�
 \item Lecture~3 xếp ``CPU + FPGA'' là tốt cho điều khiển actuator: CPU lo phần tính toán mềm dẻo, FPGA giữ timing nghiêm ngặt kể cả khi CPU đang bận.
 \item Cái giá là chi phí cao hơn và linh hoạt thấp hơn so với dùng một CPU đơn.
 \end{itemize}
+
+\begin{figure}[htbp]
+\centering
+\begin{minipage}{0.32\linewidth}\centering
+  \anh{img/hybrid_zynq.jpg}{\creditZynq}
+\end{minipage}
+\caption{Chip Zynq UltraScale+ XCZU4CG: CPU Arm và FPGA trên cùng một chip.}
+\end{figure}
 
 \begin{table}[h]
 \centering\small
@@ -333,6 +396,12 @@ Cần cả OS phong phú lẫn timing cứng & Lai & Zynq; Lecture~3, Option \#2
 \end{itemize}
 
 % ============================================================================
+\section*{Nguồn hình ảnh}
+\small Ảnh chụp lấy từ Wikimedia Commons theo giấy phép ghi bên dưới mỗi ảnh. Ảnh giữ nguyên, chỉ thu nhỏ. Các biểu đồ ``Nhóm vẽ lại'' được dựng từ số liệu trong các nguồn đã trích, không chép hình gốc.
+\begin{itemize}\footnotesize
+\creditList
+\end{itemize}
+
 \begin{thebibliography}{99}\small
 \bibitem{st-overview} ST, \emph{STM32H7/F4/MP1 product overview (CoreMark)}. \url{https://www.st.com/resource/en/product_presentation/microcontrollers_stm32h72x-3x_line_product-overview.pdf}
 \bibitem{st-h743} ST, \emph{STM32H743/753}. \url{https://www.st.com/en/microcontrollers-microprocessors/stm32h743-753.html}
