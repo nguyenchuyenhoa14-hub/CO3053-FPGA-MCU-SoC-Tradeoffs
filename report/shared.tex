@@ -1,0 +1,47 @@
+% ============================================================================
+% Phan dung chung cho report.tex va slides.tex (bien dich bang XeLaTeX)
+% ============================================================================
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{vietnamese}
+\setotherlanguage{english}
+\setmonofont{DejaVu Sans Mono}[Scale=0.85]
+\usepackage{amsmath}
+\usepackage{newunicodechar}
+\newunicodechar{≈}{\ensuremath{\approx}}
+\newunicodechar{−}{\ensuremath{-}}
+
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{array}
+\usepackage{makecell}
+
+% Mau theo nen tang (giong chart trong experiments/results/charts)
+\definecolor{cMCU}{HTML}{2A78D6}
+\definecolor{cSoC}{HTML}{EB6834}
+\definecolor{cFPGA}{HTML}{1BAF7A}
+\definecolor{cInk2}{HTML}{52514E}
+\definecolor{cWarn}{HTML}{B54708}
+
+% Nhan nguon goc so lieu: \nhan{do}, \nhan{mo phong}, ...
+\newcommand{\nhan}[1]{\textcolor{cInk2}{\footnotesize[#1]}}
+% So chua do: hien ro rang, khong bao gio dien so gia dinh
+\newcommand{\chuado}{\textcolor{cWarn}{\textit{chưa đo}}}
+
+\newcommand{\MCU}{\textcolor{cMCU}{\textbf{MCU}}}
+\newcommand{\SoC}{\textcolor{cSoC}{\textbf{SoC}}}
+\newcommand{\FPGA}{\textcolor{cFPGA}{\textbf{FPGA}}}
+
+% So lieu thi nghiem, tu dong sinh boi experiments/e5_crosscheck/collect.py
+\newcommand{\resdir}{../experiments/results}
+\IfFileExists{\resdir/numbers.tex}{\input{\resdir/numbers.tex}}{%
+  \PackageWarning{shared}{Chua co numbers.tex - chay: make -C ../experiments collect}%
+  \input{numbers_fallback.tex}}
+
+% Chen chart neu da co, neu chua thi hien khung bao "chua co"
+\newcommand{\chart}[2][\linewidth]{%
+  \IfFileExists{\resdir/charts/#2}%
+    {\includegraphics[width=#1]{\resdir/charts/#2}}%
+    {\fbox{\parbox{0.8\linewidth}{\centering\chuado{}: chưa có \texttt{#2}}}}}

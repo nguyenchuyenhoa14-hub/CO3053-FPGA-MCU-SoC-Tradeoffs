@@ -21,3 +21,12 @@ desktop.ini
 # experiments
 experiments/**/build/
 experiments/e1_mcu/.pio/
+
+# LaTeX
+report/*.aux
+report/*.log
+report/*.nav
+report/*.out
+report/*.snm
+report/*.toc
+report/*.vrb
