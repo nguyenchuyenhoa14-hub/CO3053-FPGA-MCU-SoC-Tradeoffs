@@ -1,0 +1,9 @@
+{
+  "label": "do",
+  "run_mA": null,
+  "sleep_mA": null,
+  "standby_uA": null,
+  "voltage_v": 3.3,
+  "where": "VD: ampe ke noi tiep chan 3.3V, da go LED nguon, rut SWD",
+  "meter": "VD: UNI-T UT61E"
+}

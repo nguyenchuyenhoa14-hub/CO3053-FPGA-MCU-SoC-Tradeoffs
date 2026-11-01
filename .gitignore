@@ -17,3 +17,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# experiments
+experiments/**/build/
+experiments/e1_mcu/.pio/

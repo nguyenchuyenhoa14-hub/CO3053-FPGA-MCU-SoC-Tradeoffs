@@ -1,0 +1,67 @@
+{
+  "label": "spec",
+  "num_taps": 16,
+  "q_format": "Q15",
+  "num_samples": 1024,
+  "seed": 3053,
+  "coeffs": [
+    0,
+    183,
+    259,
+    -541,
+    -1665,
+    0,
+    6025,
+    12123,
+    12123,
+    6025,
+    0,
+    -1665,
+    -541,
+    259,
+    183,
+    0
+  ],
+  "coeff_sum": 32768,
+  "coeff_abs_sum": 41592,
+  "sections": [
+    {
+      "name": "impulse_32767",
+      "start": 0,
+      "len": 32
+    },
+    {
+      "name": "step_1000",
+      "start": 32,
+      "len": 32
+    },
+    {
+      "name": "step_max",
+      "start": 64,
+      "len": 32
+    },
+    {
+      "name": "step_min",
+      "start": 96,
+      "len": 32
+    },
+    {
+      "name": "adversarial_sat",
+      "start": 128,
+      "len": 32
+    },
+    {
+      "name": "alternating_max",
+      "start": 160,
+      "len": 32
+    },
+    {
+      "name": "random_uniform",
+      "start": 192,
+      "len": 832
+    }
+  ],
+  "golden_checksum": "0x01F4190F",
+  "saturated_outputs": 60,
+  "arith": "y = sat16(floor(sum(h[k]*x[n-k]) / 2^15))"
+}
