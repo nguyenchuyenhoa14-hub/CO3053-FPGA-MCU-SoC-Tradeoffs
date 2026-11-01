@@ -1,0 +1,10 @@
+{
+  "label": "mo phong",
+  "experiment": "E2_fpga_rtl_sim",
+  "simulator": "icarus verilog",
+  "num_samples": 1024,
+  "pass":  true,
+  "continuous": {"mismatches": 0, "latency_cycles": 7, "cycles_first_in_to_last_out": 1031},
+  "with_gaps":  {"mismatches": 0, "latency_cycles": 7, "cycles_first_in_to_last_out": 1387},
+  "samples_per_cycle": 1.0000
+}
