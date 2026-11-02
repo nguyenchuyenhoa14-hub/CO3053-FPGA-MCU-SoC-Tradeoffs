@@ -1,0 +1,17 @@
+{
+ "label": "do",
+ "experiment": "E2_fpga_on_board",
+ "board": "Digilent Arty Z7-20",
+ "part": "xc7z020clg400-1",
+ "clock_mhz": 125.0,
+ "pass": true,
+ "num_samples": 1024,
+ "mismatches": 0,
+ "first_bad": null,
+ "latency_cycles": 7,
+ "cycles_first_in_to_last_out": 1031,
+ "samples_per_cycle": 1.0000,
+ "throughput_msps": 125.00,
+ "latency_ns": 56.0,
+ "raw": "FIR16 PASS N=0400 ERR=0000 LAT=0007 CYC=00000407 FBAD=FFFF"
+}

@@ -1,30 +1,34 @@
 // ============================================================================
-// E2 - Tu kiem FIR16 tren board Arty A7-100T.
+// E2 - Tu kiem FIR16 tren board Digilent Arty Z7-20 (xc7z020clg400-1).
 //
-// Sau reset (hoac nhan BTN0): doc 1024 mau tu BRAM, bom vao FIR16 MOI chu ky
-// 100 MHz, so tung mau ra voi golden (cung BRAM) ngay tren chip, dem chu ky.
-// Bao cao qua USB-UART 115200 8N1 (dang hex, scripts/read_uart.py doi ra JSON):
+// Sau khi nap bitstream (POR) hoac nhan BTN1 (reset) / BTN0 (chay lai):
+// doc 1024 mau tu BRAM, bom vao FIR16 MOI chu ky 125 MHz (8 ns), so tung mau ra
+// voi golden (cung BRAM) ngay tren chip, dem chu ky.
+// Bao cao qua UART 115200 8N1 (chan Y18 = Pmod JA[0]) va thanh ghi JTAG USER4:
 //   FIR16 PASS N=0400 ERR=0000 LAT=0007 CYC=00000407 FBAD=FFFF   (0x407 = 1031 = 1024 + 7)
-// LED: LD4 = xong, LD5 = PASS, LD6 = FAIL, LD7 = nhip tim (board dang chay)
+// LED: LD0 = xong, LD1 = PASS, LD2 = FAIL, LD3 = nhip tim (board dang chay)
 // ============================================================================
 `timescale 1ns / 1ps
 `default_nettype none
 
 module top_arty #(
-    parameter integer CLKS_PER_BIT = 868,
+    parameter integer CLKS_PER_BIT = 1085,  // 125 MHz / 115200 = 1085.07
     parameter integer NS = 1024
 ) (
-    input  wire       CLK100MHZ,
-    input  wire       ck_rst,        // nut RESET do, muc thap
-    input  wire       btn0,
-    output wire [3:0] led,
-    output wire       uart_rxd_out   // FPGA -> PC
+    input  wire       CLK125MHZ,     // PL clock 125 MHz (chan H16 tren Arty Z7-20)
+    input  wire       btn1_rst,      // nut BTN1 (D20), active-high: nhan = reset
+    input  wire       btn0,          // nut BTN0 (D19), active-high: nhan = chay lai
+    output wire [3:0] led,           // LD0..LD3 (R14, P14, N16, M14)
+    output wire       uart_rxd_out   // FPGA -> PC (Pmod JA[0] chan Y18)
 );
-    wire clk = CLK100MHZ;
+    wire clk = CLK125MHZ;
 
-    // ---------------- Reset & nut nhan (dong bo hoa) ----------------
+    // ---------------- Power-on Reset (POR) & nut nhan (dong bo hoa) ----------------
+    reg [7:0] por = 8'd0;
+    always @(posedge clk) if (!(&por)) por <= por + 8'd1;
+
     reg [2:0] rst_sync = 3'b111;
-    always @(posedge clk) rst_sync <= {rst_sync[1:0], ~ck_rst};
+    always @(posedge clk) rst_sync <= {rst_sync[1:0], btn1_rst | ~(&por)};
     wire rst = rst_sync[2];
 
     reg [2:0] btn_sync = 0;
@@ -76,7 +80,7 @@ module top_arty #(
     always @(posedge clk) begin
         msg_go <= 1'b0;
         if (rst) begin
-            state <= S_IDLE; run_req <= 1'b1;   // tu chay 1 lan sau reset
+            state <= S_IDLE; run_req <= 1'b1;   // tu chay 1 lan sau reset / POR
             rd_en <= 0; rd_addr <= 0; fir_rst <= 1;
             done <= 0; pass <= 0;
         end else begin
@@ -190,6 +194,25 @@ module top_arty #(
     uart_tx #(.CLKS_PER_BIT(CLKS_PER_BIT)) u_tx (
         .clk(clk), .rst(rst), .start(tx_start), .data(tx_byte),
         .tx(uart_rxd_out), .busy(tx_busy));
+
+    // ---------------- JTAG USER4 Readout (khong can day USB-UART roi) ----------------
+`ifdef SYNTHESIS
+    wire jtag_capture, jtag_drck, jtag_reset, jtag_sel, jtag_shift, jtag_tck, jtag_tdi, jtag_update;
+    (* KEEP = "true", DONT_TOUCH = "true" *) reg [95:0] jtag_sr = 96'd0;
+    wire jtag_tdo = jtag_sr[0];
+    (* KEEP = "true", DONT_TOUCH = "true" *)
+    BSCANE2 #(.JTAG_CHAIN(4)) u_bscan (
+        .CAPTURE(jtag_capture), .DRCK(jtag_drck), .RESET(jtag_reset), .RUNTEST(),
+        .SEL(jtag_sel), .SHIFT(jtag_shift), .TCK(jtag_tck), .TDI(jtag_tdi),
+        .TMS(), .UPDATE(jtag_update), .TDO(jtag_tdo)
+    );
+    always @(posedge jtag_tck) begin
+        if (jtag_sel && jtag_capture)
+            jtag_sr <= {14'h2A55, pass, done, first_bad, lat, n_err, cyc};
+        else if (jtag_sel && jtag_shift)
+            jtag_sr <= {jtag_tdi, jtag_sr[95:1]};
+    end
+`endif
 
     // ---------------- LED ----------------
     reg [26:0] hb = 0;

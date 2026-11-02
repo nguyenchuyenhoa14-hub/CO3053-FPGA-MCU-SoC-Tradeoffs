@@ -3,8 +3,8 @@
 % ============================================================================
 \documentclass[aspectratio=169,11pt]{beamer}
 \input{shared.tex}
-\setsansfont{Noto Sans}
-\setmainfont{Noto Sans}
+\IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{\setsansfont{Arial}}
+\IfFontExistsTF{Noto Sans}{\setmainfont{Noto Sans}}{\setmainfont{Arial}}
 
 \usetheme{default}
 \usefonttheme{professionalfonts}

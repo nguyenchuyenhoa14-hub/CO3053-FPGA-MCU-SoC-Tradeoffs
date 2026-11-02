@@ -1,31 +1,34 @@
-// Kiem tra top_arty truoc khi nap board: giai ma UART, chay 2 lan (sau reset + nhan BTN0).
+// Kiem tra top_arty (Arty Z7-20 @ 125 MHz) truoc khi nap board:
+// giai ma UART, chay 2 lan (tu chay sau POR/reset + nhan BTN0).
 `timescale 1ns / 1ps
 
 module tb_top_arty;
     localparam integer CPB = 8;   // UART nhanh cho mo phong
-    reg clk = 0, ck_rst = 0, btn0 = 0;
+    reg clk = 0, btn1_rst = 1, btn0 = 0;
     wire [3:0] led;
     wire tx;
 
-    top_arty #(.CLKS_PER_BIT(CPB)) dut (.CLK100MHZ(clk), .ck_rst(ck_rst), .btn0(btn0),
-                                        .led(led), .uart_rxd_out(tx));
-    always #5 clk = ~clk;
+    top_arty #(.CLKS_PER_BIT(CPB)) dut (
+        .CLK125MHZ(clk), .btn1_rst(btn1_rst), .btn0(btn0),
+        .led(led), .uart_rxd_out(tx)
+    );
+    always #4 clk = ~clk;   // 125 MHz (chu ky 8 ns)
 
     reg [8*80-1:0] line;
     integer nch, nlines, b;
     reg [7:0] c;
 
-    // Bo thu UART: lay mau giua moi bit
+    // Bo thu UART: lay mau giua moi bit (moi chu ky clk = 8 ns)
     initial begin
         nch = 0; nlines = 0; line = 0;
         forever begin
             @(negedge tx);
-            #(CPB * 10 / 2);
+            #(CPB * 8 / 2);
             for (b = 0; b < 8; b = b + 1) begin
-                #(CPB * 10);
+                #(CPB * 8);
                 c[b] = tx;
             end
-            #(CPB * 10);
+            #(CPB * 8);
             if (c == 8'h0A) begin
                 nlines = nlines + 1;
                 $display("UART dong %0d: %0s", nlines, line);
@@ -38,10 +41,10 @@ module tb_top_arty;
 
     initial begin
         repeat (5) @(posedge clk);
-        ck_rst = 1;
+        btn1_rst = 0;   // nha nut reset (POR se tu dem xong 255 chu ky va chay)
         wait (nlines == 1);
-        $display("LED = %b (LD7..LD4)", led);
-        #100 btn0 = 1; #100 btn0 = 0;
+        $display("LED = %b (LD3..LD0)", led);
+        #80 btn0 = 1; #80 btn0 = 0;
         wait (nlines == 2);
         $finish;
     end

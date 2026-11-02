@@ -3,7 +3,7 @@
 #
 # Doi cong/may bang bien, vi du:
 #   make mcu MCU_PORT=/dev/ttyUSB0
-#   make fpga FPGA_PORT=/dev/ttyUSB2
+#   make fpga FPGA_PORT=/dev/ttyUSB1
 #   make pi PI=pi@192.168.1.50
 # ============================================================================
 
@@ -38,11 +38,11 @@ help:
 	@echo "  make mcu-flash       build + nap qua ST-Link"
 	@echo "  make mcu-capture     doc ket qua serial -> results/e1_mcu.json"
 	@echo "  make mcu             = flash + capture"
-	@echo "Arty A7-100T (USB-JTAG, UART o $(FPGA_PORT)):"
-	@echo "  make fpga-build      Vivado synth/impl/bitstream + bao cao (5-10 phut)"
-	@echo "  make fpga-flash      nap bitstream qua JTAG"
-	@echo "  make fpga-capture    doc dong tu kiem -> results/e2_fpga_board.json"
-	@echo "  make fpga            = build + flash + capture"
+	@echo "Digilent Arty Z7-20 (xc7z020clg400-1 @ 125 MHz, USB-JTAG / UART o $(FPGA_PORT)):"
+	@echo "  make fpga-build      Vivado synth/impl/bitstream + bao cao (3-5 phut)"
+	@echo "  make fpga-flash      nap bitstream qua JTAG (+ tu doc ket qua qua JTAG)"
+	@echo "  make fpga-capture    doc dong tu kiem qua UART JA[0] -> results/e2_fpga_board.json"
+	@echo "  make fpga            = build + flash"
 	@echo "Raspberry Pi 4 qua SSH ($(PI)):"
 	@echo "  make pi-sync         copy code sang Pi ($(PI_DIR))"
 	@echo "  make pi-bench        chay benchmark FIR tren Pi"
@@ -81,7 +81,7 @@ mcu-capture:
 
 mcu: mcu-flash mcu-capture
 
-# ---------------------------------------------------------------- E2 Arty
+# ---------------------------------------------------------------- E2 Arty Z7-20
 fpga-build: golden
 	mkdir -p e2_fpga/build/vivado
 	cd e2_fpga && $(VIVADO) -mode batch -nojournal -log build/vivado/vivado.log -source vivado/build.tcl
@@ -91,10 +91,10 @@ fpga-flash:
 	cd e2_fpga && $(VIVADO) -mode batch -nojournal -nolog -source vivado/program.tcl
 
 fpga-capture:
-	@echo ">> Nhan BTN0 tren Arty neu chua thay ket qua"
+	@echo ">> Nhan BTN0 tren Arty Z7-20 neu chua thay ket qua (UART o chan Pmod JA[0] = Y18)"
 	$(PYSERIAL) tools/capture_serial.py fpga $(FPGA_PORT)
 
-fpga: fpga-build fpga-flash fpga-capture
+fpga: fpga-build fpga-flash
 
 # ---------------------------------------------------------------- E3 Pi 4
 PI_SRC := common e3_soc results/templates

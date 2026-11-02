@@ -8,7 +8,7 @@
 
 module tb_fir16;
     localparam integer NS   = 1024;
-    localparam real    TCLK = 10.0;   // 100 MHz chi de doi don vi; RTL sim khong co tre cong
+    localparam real    TCLK = 8.0;    // 125 MHz (8 ns) tren Arty Z7-20; RTL sim khong co tre cong
 
     reg clk = 0, rst = 1, in_valid = 0;
     reg signed [15:0] in_data = 0;

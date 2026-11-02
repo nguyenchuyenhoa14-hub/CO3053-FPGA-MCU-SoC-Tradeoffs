@@ -21,17 +21,17 @@
 \nhap{McuIrqRange}{}         % do tre ngat kich ban fir_load, "min_ns"-"max_ns"      vd: 236--264
 \nhap{McuIrqHogMax}{}        % kich ban co ngat 20 us: max_ns/1000 (us)              vd: 20,6
 
-% ---------------- E2: FPGA Arty A7-100T ----------------
-% Lay tu results/e2_fpga_board.json (make fpga-capture) va e2_fpga_impl.json (Vivado)
+% ---------------- E2: FPGA Digilent Arty Z7-20 (XC7Z020 @ 125 MHz) ----------------
+% Lay tu results/e2_fpga_board.json (make fpga-flash / fpga-capture) va e2_fpga_impl.json (Vivado)
 \nhap{FpgaPass}{}            % PASS / FAIL tren board
 \nhap{FpgaLabel}{}           % "đo" neu da chay tren board, "mô phỏng" neu chi mo phong
 \nhap{FpgaSpc}{}             % mau/chu ky, "samples_per_cycle"                       vd: 1,00
-\nhap{FpgaMsps}{}            % thong luong o 100 MHz (MSPS)                          vd: 100,0
+\nhap{FpgaMsps}{}            % thong luong o 125 MHz (MSPS)                          vd: 125,0
 \nhap{FpgaLatCycles}{}       % do tre pipeline (chu ky), "latency_cycles"             vd: 7
-\nhap{FpgaLatNs}{}           % = FpgaLatCycles x 10 ns                               vd: 70
+\nhap{FpgaLatNs}{}           % = FpgaLatCycles x 8 ns (o 125 MHz)                    vd: 56
 \nhap{FpgaFmax}{}            % Fmax uoc tinh cua khoi FIR (MHz), "fmax_mhz_est"       vd: 410
-\nhap{FpgaDsp}{}             % so DSP48E1 khoi FIR dung, "dsp48e1"                    vd: 12
-\nhap{FpgaPower}{}           % cong suat ca chip (W), "power_total_w"                 vd: 0,112
+\nhap{FpgaDsp}{}             % so DSP48E1 khoi FIR dung (tren 220), "dsp48e1"         vd: 12
+\nhap{FpgaPower}{}           % cong suat ca chip (W), "power_total_w"                 vd: 0,118
 
 % ---------------- E3: Raspberry Pi 4 ----------------
 % Lay tu results/e3_soc_fir_aarch64_O3.json va e3_cyclictest_*.json (make pi)
@@ -40,5 +40,5 @@
 \nhap{LinuxRtMax}{}          % cyclictest max_us, PREEMPT_RT, CO TAI (us)            vd: 75
 
 % ---------------- Ti le (tu tinh tu cac so tren) ----------------
-\nhap{RatioFpgaPi}{}         % FpgaMsps / PiBestMsps                                 vd: 1,7
-\nhap{RatioFpgaMcu}{}        % FpgaMsps / McuBestMsps                                vd: 98
+\nhap{RatioFpgaPi}{}         % FpgaMsps / PiBestMsps                                 vd: 2,1
+\nhap{RatioFpgaMcu}{}        % FpgaMsps / McuBestMsps                                vd: 123

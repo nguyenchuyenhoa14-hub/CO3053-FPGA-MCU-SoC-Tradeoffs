@@ -3,8 +3,8 @@
 % ============================================================================
 \documentclass[11pt,a4paper]{article}
 \input{shared.tex}
-\setmainfont{Noto Serif}
-\setsansfont{Noto Sans}
+\IfFontExistsTF{Noto Serif}{\setmainfont{Noto Serif}}{\setmainfont{Times New Roman}}
+\IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{\setsansfont{Arial}}
 
 \usepackage[margin=2.2cm]{geometry}
 \usepackage{enumitem}
@@ -28,7 +28,7 @@
 
 \title{\textbf{So sánh MCU – SoC – FPGA}\\[2pt]\large Đánh đổi giữa hiệu năng, chi phí và độ linh hoạt}
 \author{CO3053 Hệ thống nhúng · HK261 · Đề tài 09}
-\date{01/11/2026}
+\date{02/11/2026}
 
 \begin{document}
 \maketitle
@@ -53,10 +53,10 @@ Nền tảng & Đại diện & Cách chạy phần mềm\\
 \midrule
 \MCU  & ARM Cortex-M: STM32F103 (nhóm đo), STM32F4, STM32H743, STM32U5 (tài liệu) & Bare-metal hoặc RTOS\\
 \SoC  & ARM Cortex-A + Linux: Raspberry Pi 4 (nhóm đo), STM32MP1 & Linux có sẵn driver, mạng, file system\\
-\FPGA & Artix-7 XC7A100T trên Arty A7-100T (nhóm đo); Zynq làm phương án lai & Mô tả phần cứng bằng HDL, không có chương trình tuần tự\\
+\FPGA & Artix-7 PL trên Arty Z7-20 / XC7Z020 (nhóm đo), XC7A100T (tài liệu); Zynq (PS+PL) làm phương án lai & Mô tả phần cứng bằng HDL, không có chương trình tuần tự\\
 \bottomrule
 \end{tabularx}
-\caption{Ba nền tảng được so sánh. Zynq (CPU và FPGA trên cùng chip) được xếp vào \emph{phương án lai}, không gọi là SoC.}
+\caption{Ba nền tảng được so sánh. Ở thí nghiệm E2, nhóm chỉ dùng thuần vùng khả trình Artix-7 PL trên board Arty Z7-20 (không bật CPU ARM); khi kết hợp cả CPU và FPGA trên cùng chip Zynq thì xếp vào \emph{phương án lai}.}
 \end{table}
 
 Giá linh kiện của MCU và FPGA là giá chip, còn giá của Raspberry Pi là giá cả board. Vì vậy các phép so sánh giá chỉ dùng để thấy bậc độ lớn.
@@ -82,9 +82,9 @@ Giá linh kiện của MCU và FPGA là giá chip, còn giá của Raspberry Pi 
 \end{minipage}\hfill
 \begin{minipage}[b]{0.31\linewidth}\centering
   \anh{img/fpga_artix7.jpg}{\creditArtix}
-  \small (c) \FPGA: Artix-7 XC7A100T
+  \small (c) \FPGA: kiến trúc Artix-7 (XC7A100T / XC7Z020 PL)
 \end{minipage}
-\caption{Ba nền tảng nhóm dùng (cùng họ chip, ảnh minh họa không phải board của nhóm).}
+\caption{Ba nền tảng nhóm dùng (cùng họ kiến trúc, ảnh minh họa không phải board của nhóm).}
 \end{figure}
 
 \begin{figure}[htbp]
@@ -109,7 +109,7 @@ Giá linh kiện của MCU và FPGA là giá chip, còn giá của Raspberry Pi 
 \textbf{Thông lượng MAC.} Bài toán lọc ảnh 3×3 trên video 1080p, 3 kênh màu, 30 khung/giây cần khoảng 1,68 G MAC/s (Lee \& Seshia, mục 8.1).
 \begin{itemize}
 \item STM32H743 đạt tối đa khoảng 0,48 G MAC/s \nhan{tính: 1 MAC/chu kỳ × 480 MHz}, tức chỉ khoảng 29\% nhu cầu.
-\item XC7A100T với 240 khối DSP48E1 chạy ở 200 MHz đạt khoảng 48 G MAC/s \nhan{tính}; hãng công bố tối đa 264 GMAC/s~\cite{xa7}.
+\item XC7A100T với 240 khối DSP48E1 (hoặc vùng Artix-7 PL của XC7Z020 với 220 khối DSP48E1) chạy ở 200 MHz đạt khoảng 44–48 G MAC/s \nhan{tính}; hãng công bố dòng Artix-7 tối đa 264 GMAC/s~\cite{xa7}.
 \item Theo Arucu \& Iliev~\cite{arucu}, FIR 27-tap trên Zynq XC7Z020 chạy nhanh hơn Cortex-A9 khoảng 27 lần, và năng lượng mỗi lần chạy thấp hơn khoảng 95–190 lần \nhan{tính, vì công suất CPU là ước tính của tác giả}.
 \end{itemize}
 
@@ -138,7 +138,7 @@ Giá linh kiện của MCU và FPGA là giá chip, còn giá của Raspberry Pi 
 \centering\small
 \begin{tabularx}{\linewidth}{@{}l Y Y Y@{}}
 \toprule
-& \MCU{} STM32H743 & \SoC{} Raspberry Pi 4 & \FPGA{} XC7A100T\\
+& \MCU{} STM32H743 & \SoC{} Raspberry Pi 4 & \FPGA{} XC7A100T / XC7Z020\\
 \midrule
 Giá mua lẻ & £9,26–11,97 / chip~\cite{rs} & \$35 / board khi ra mắt~\cite{anand} & €143,90 / chip~\cite{farnell}\\
 Khi chạy & ≈0,44 W \nhan{tính: 275 µA/MHz × 480 MHz × 3,3 V} & ≈7 W đỉnh, cả board~\cite{techfeed} & 1,431 W đo trên Zynq XC7Z020, gồm cả ARM~\cite{arucu}\\
@@ -172,10 +172,10 @@ y[n]=\operatorname{sat}_{16}\!\Big(\big\lfloor \textstyle\sum_{k=0}^{15} h[k]\,x
   \item Đếm chu kỳ bằng \texttt{DWT->CYCCNT} khi đã tắt ngắt.
   \item Đo độ trễ ngắt: TIM2 ở 10 kHz, ISR đọc \texttt{TIM2->CNT} ngay lệnh đầu tiên, lấy 20\,000 mẫu cho mỗi kịch bản.
   \end{itemize}
-\item \textbf{E2, \FPGA{} Arty A7-100T.}
+\item \textbf{E2, \FPGA{} Digilent Arty Z7-20 (XC7Z020 PL @ 125 MHz).}
   \begin{itemize}
-  \item RTL pipeline 7 tầng, có bão hòa. Testbench chạy hai lượt: liên tục và có khoảng trống ngẫu nhiên trên \texttt{in\_valid}.
-  \item Trên board: đọc 1024 mẫu từ BRAM ở 100 MHz, so với golden ngay trên chip, đếm chu kỳ và báo kết quả qua UART.
+  \item RTL pipeline 7 tầng, có bão hòa, tổng hợp trên vùng logic khả trình Artix-7 PL của chip Zynq-7020 (\texttt{xc7z020clg400-1}, có 220 khối DSP48E1 và 53\,200 LUT). Testbench chạy hai lượt: liên tục và có khoảng trống ngẫu nhiên trên \texttt{in\_valid}.
+  \item Trên board: đọc 1024 mẫu từ BRAM ở xung nhịp gốc 125 MHz (chu kỳ 8 ns, chân \texttt{H16}), so với golden ngay trên chip, đếm chu kỳ và báo kết quả qua JTAG/UART.
   \item Vivado cho Fmax, số tài nguyên và công suất \nhan{ước lượng công cụ}.
   \end{itemize}
 \item \textbf{E3, \SoC{} Raspberry Pi 4.}
@@ -203,10 +203,10 @@ y[n]=\operatorname{sat}_{16}\!\Big(\big\lfloor \textstyle\sum_{k=0}^{15} h[k]\,x
 \SoC  & \texttt{cyclictest} xấu nhất khi có tải, Linux thường (µs) & \expLinuxStdMax & \nhan{đo}\\
 \SoC  & \texttt{cyclictest} xấu nhất khi có tải, PREEMPT\_RT (µs) & \expLinuxRtMax & \nhan{đo}\\
 \FPGA & Kiểm tra với golden & \expFpgaPass & \nhan{\expFpgaLabel}\\
-\FPGA & Mẫu/chu kỳ; thông lượng ở 100 MHz (MSPS) & \expFpgaSpc{}; \expFpgaMsps & \nhan{\expFpgaLabel}\\
-\FPGA & Độ trễ pipeline & \expFpgaLatCycles{} chu kỳ = \expFpgaLatNs{} ns & \nhan{\expFpgaLabel}\\
-\FPGA & Fmax của riêng khối FIR (MHz); số DSP48E1 (trên 240) & \expFpgaFmax{}; \expFpgaDsp & \nhan{ước lượng công cụ}\\
-\FPGA & Công suất cả chip ở 100 MHz (W) & \expFpgaPower & \nhan{ước lượng công cụ}\\
+\FPGA & Mẫu/chu kỳ; thông lượng ở 125 MHz (MSPS) & \expFpgaSpc{}; \expFpgaMsps & \nhan{\expFpgaLabel}\\
+\FPGA & Độ trễ pipeline (ở 125 MHz) & \expFpgaLatCycles{} chu kỳ = \expFpgaLatNs{} ns & \nhan{\expFpgaLabel}\\
+\FPGA & Fmax của riêng khối FIR (MHz); số DSP48E1 (trên 220) & \expFpgaFmax{}; \expFpgaDsp & \nhan{ước lượng công cụ}\\
+\FPGA & Công suất cả chip ở 125 MHz (W) & \expFpgaPower & \nhan{ước lượng công cụ}\\
 \bottomrule
 \end{tabularx}
 \caption{Kết quả thí nghiệm, tự động lấy từ \texttt{experiments/results/} qua \texttt{collect.py}. Ô ghi \chuado{} nghĩa là chưa có phép đo; nhóm không điền số giả định vào những ô này.}
@@ -223,7 +223,7 @@ y[n]=\operatorname{sat}_{16}\!\Big(\big\lfloor \textstyle\sum_{k=0}^{15} h[k]\,x
 
 \begin{itemize}
 \item \textbf{Giả thiết 1 MAC/chu kỳ.} Con số ≈0,48 G MAC/s của H743 ở trên giả định 1 MAC/chu kỳ. Trên M3, bản tốt nhất của nhóm đạt \expMcuEff\% mức đó. Nếu tỉ lệ này thấp, con số lý thuyết chỉ là cận trên lạc quan. Lý do: ngoài phép nhân, CPU còn phải nạp hai toán hạng, cập nhật đường trễ, và flash có 2 wait state ở 72 MHz.
-\item \textbf{FPGA so với CPU.} FPGA ở 100 MHz nhanh hơn Pi 4 \expRatioFpgaPi{} lần và nhanh hơn MCU \expRatioFpgaMcu{} lần với bài 16-tap này. Arucu \& Iliev đo được khoảng 27 lần so với Cortex-A9 với bài 27-tap. Khi so, cần nhớ khác biệt về chip, số tap và cách đo.
+\item \textbf{FPGA so với CPU.} FPGA ở 125 MHz nhanh hơn Pi 4 \expRatioFpgaPi{} lần và nhanh hơn MCU \expRatioFpgaMcu{} lần với bài 16-tap này. Arucu \& Iliev đo được khoảng 27 lần so với Cortex-A9 với bài 27-tap (cũng trên chip XC7Z020). Khi so, cần nhớ khác biệt về chip CPU, số tap và cách đo.
 \item \textbf{Một quan sát phụ.} Khi chạy thử code trên laptop x86, nhóm thấy một lõi CPU desktop lọc được khoảng 140 MSPS với bài 16-tap. Như vậy FPGA không thắng chỉ nhờ tốc độ thô ở bài nhỏ. Lợi thế của FPGA nằm ở chỗ khác:
   \begin{itemize}
   \item thông lượng giữ nguyên khi tăng số tap, chỉ tốn thêm DSP;
@@ -339,7 +339,7 @@ Phần này chọn những lĩnh vực mà mỗi nền tảng gần như là l�
 
 Có những bài toán cần \emph{cả} hệ điều hành phong phú \emph{lẫn} timing hoặc xử lý song song cứng.
 \begin{itemize}
-\item Zynq UltraScale+ gom trên một chip: 4 lõi Cortex-A53 chạy Linux, 2 lõi Cortex-R5 real-time chạy lockstep, và fabric FPGA. Dòng chip này nhắm tới ADAS và điều khiển công nghiệp~\cite{eenews-zynq}.
+\item Dòng Zynq-7000 (như chip XC7Z020 trên board Arty Z7-20 của nhóm: 2 lõi Cortex-A9 + vùng FPGA Artix-7) và Zynq UltraScale+ (4 lõi Cortex-A53 chạy Linux, 2 lõi Cortex-R5 real-time chạy lockstep, và fabric FPGA) gom cả hai thế giới trên một đế silicon, nhắm tới ADAS và điều khiển công nghiệp~\cite{eenews-zynq}.
 \item Lecture~3 xếp ``CPU + FPGA'' là tốt cho điều khiển actuator: CPU lo phần tính toán mềm dẻo, FPGA giữ timing nghiêm ngặt kể cả khi CPU đang bận.
 \item Cái giá là chi phí cao hơn và linh hoạt thấp hơn so với dùng một CPU đơn.
 \end{itemize}
@@ -379,7 +379,7 @@ Lai   & ADAS, điều khiển công nghiệp & Cần cả OS lẫn timing cứng
 Chạy pin nhiều năm, tác vụ nhẹ & \MCU & 300 nA ở Standby; hơn 10 năm trên CR2032\\
 Deadline vài chục µs, cần độ trễ ổn định, có chứng nhận an toàn & \MCU & Ngắt dưới 1 µs (E1); AURIX ASIL-D\\
 Cần Linux, camera, mạng, giao diện; timing mềm & \SoC & CoreMark gấp ≈16 lần H743; driver có sẵn\\
-Trên ≈0,5 G MAC/s liên tục, hoặc I/O tốc độ cao & \FPGA{} / lai & ≈48 G MAC/s \nhan{tính}; 1 mẫu/chu kỳ (E2)\\
+Trên ≈0,5 G MAC/s liên tục, hoặc I/O tốc độ cao & \FPGA{} / lai & ≈44–48 G MAC/s \nhan{tính}; 1 mẫu/chu kỳ (E2)\\
 Độ trễ cỡ ns, pipeline cố định & \FPGA & 13,9 ns tick-to-trade\\
 Cần cả OS phong phú lẫn timing cứng & Lai & Zynq; Lecture~3, Option \#2\\
 \bottomrule
@@ -390,7 +390,7 @@ Cần cả OS phong phú lẫn timing cứng & Lai & Zynq; Lecture~3, Option \#2
 \section{Hạn chế}
 \begin{itemize}
 \item Số liệu tài liệu đến từ nhiều nguồn với điều kiện đo khác nhau. Nhiều nguồn chỉ được đọc qua đoạn trích trong kết quả tìm kiếm, và giá bán lẻ có thể thay đổi theo ngày.
-\item Thí nghiệm của nhóm chỉ dùng \emph{một} bài toán (FIR 16-tap). Ba nền tảng ở các phân khúc giá khác nhau: F103 khoảng vài USD, Pi 4 khoảng 35 USD, Arty khoảng 300 USD cả board.
+\item Thí nghiệm của nhóm chỉ dùng \emph{một} bài toán (FIR 16-tap). Ba nền tảng ở các phân khúc giá khác nhau: F103 khoảng vài USD, Pi 4 khoảng 35 USD, Arty Z7-20 khoảng 300 USD cả board.
 \item Công suất FPGA là ước lượng của Vivado (vector-less), không phải số đo. Phép đo độ trễ ở ba nền tảng là ba đại lượng khác nhau.
 \item Phần ứng dụng dựa trên tài liệu của hãng và báo chuyên ngành. Con số thị phần đến từ các công ty nghiên cứu thị trường và có thể lệch nhau.
 \end{itemize}

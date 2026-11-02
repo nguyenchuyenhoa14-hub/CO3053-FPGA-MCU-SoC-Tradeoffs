@@ -5,7 +5,7 @@
 \usepackage{polyglossia}
 \setdefaultlanguage{vietnamese}
 \setotherlanguage{english}
-\setmonofont{DejaVu Sans Mono}[Scale=0.85]
+\IfFontExistsTF{DejaVu Sans Mono}{\setmonofont{DejaVu Sans Mono}[Scale=0.85]}{\setmonofont{Consolas}[Scale=0.88]}
 \usepackage{amsmath}
 \usepackage{newunicodechar}
 \newunicodechar{≈}{\ensuremath{\approx}}

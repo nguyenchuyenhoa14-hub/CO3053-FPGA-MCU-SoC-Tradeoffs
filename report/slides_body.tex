@@ -94,7 +94,7 @@ Mọi nền tảng phải khớp \textbf{từng mẫu} với golden model viết
 \toprule
 \MCU  & STM32F103, Cortex-M3 & 4 phiên bản (C, CMSIS-DSP), đếm chu kỳ bằng DWT; độ trễ ngắt trong 3 kịch bản\\
 \SoC  & Raspberry Pi 4 & Cùng mã C, \texttt{-O2} và \texttt{-O3} (NEON); \texttt{cyclictest} khi rảnh và khi có tải\\
-\FPGA & Arty A7-100T & Pipeline 7 tầng; tự so với golden ngay trên chip ở 100 MHz; Vivado cho Fmax và công suất\\
+\FPGA & Arty Z7-20 (XC7Z020 PL) & Pipeline 7 tầng; tự so với golden ngay trên chip ở 125 MHz; Vivado cho Fmax và công suất\\
 \bottomrule
 \end{tabularx}
 \par\medskip
@@ -246,7 +246,7 @@ Nếu bài toán\ldots & Chọn & Vì\\
 Chạy pin nhiều năm, tác vụ nhẹ & \MCU & 300 nA ở Standby\\
 Deadline vài chục µs, cần chứng nhận an toàn & \MCU & Ngắt dưới 1 µs; ASIL-D\\
 Cần Linux, camera, mạng; timing mềm & \SoC & CoreMark gấp ≈16×; driver có sẵn\\
-Trên ≈0,5 G MAC/s liên tục, I/O tốc độ cao & \FPGA{} / lai & 1 mẫu/chu kỳ, ≈48 G MAC/s\\
+Trên ≈0,5 G MAC/s liên tục, I/O tốc độ cao & \FPGA{} / lai & 1 mẫu/chu kỳ, ≈44–48 G MAC/s\\
 Độ trễ cỡ ns & \FPGA & 13,9 ns\\
 Cần cả OS lẫn timing cứng & Lai & Zynq, Lecture 3\\
 \bottomrule

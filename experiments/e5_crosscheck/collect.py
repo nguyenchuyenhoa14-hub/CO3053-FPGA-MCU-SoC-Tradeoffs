@@ -23,7 +23,7 @@ def load(name):
     p = os.path.join(RES, name)
     if not os.path.exists(p):
         return None
-    with open(p) as f:
+    with open(p, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -53,7 +53,7 @@ def gather(include_x86):
                              "sự kiện timer → lệnh đầu ISR"))
 
     for f in sorted(glob.glob(os.path.join(RES, "e3_soc_fir_*.json"))):
-        d = json.load(open(f))
+        d = json.load(open(f, encoding="utf-8"))
         is_pi = d["machine"] == "aarch64"
         if not is_pi and not include_x86:
             continue
@@ -63,7 +63,7 @@ def gather(include_x86):
                             v["msps_median"], "đo", "đúng" if v["correct"] else "SAI"))
 
     for f in sorted(glob.glob(os.path.join(RES, "e3_cyclictest_*.json"))):
-        d = json.load(open(f))
+        d = json.load(open(f, encoding="utf-8"))
         kern = "PREEMPT_RT" if d["kernel"] == "rt" else "Linux thường"
         rows_lat.append(("SoC", f"Pi 4 · {kern} · {'có tải' if d['load'] == 'load' else 'rảnh'}",
                          d["max_us"] * 1000.0, "đo", "độ trễ lập lịch (cyclictest)"))
@@ -72,18 +72,18 @@ def gather(include_x86):
     board = load("e2_fpga_board.json")
     impl = load("e2_fpga_impl.json")
     if board:
-        rows_tp.append(("FPGA", "Arty A7-100T · 100 MHz trên board", board["throughput_msps"], "đo",
+        rows_tp.append(("FPGA", "Arty Z7-20 · 125 MHz trên board", board["throughput_msps"], "đo",
                         "PASS" if board["pass"] else "FAIL"))
-        rows_lat.append(("FPGA", "pipeline FIR · 100 MHz", board["latency_ns"], "đo", "mẫu vào → mẫu ra"))
+        rows_lat.append(("FPGA", "pipeline FIR · 125 MHz", board["latency_ns"], "đo", "mẫu vào → mẫu ra"))
     elif sim:
-        rows_tp.append(("FPGA", "RTL · giả định clock 100 MHz", sim["samples_per_cycle"] * 100.0, "mô phỏng",
+        rows_tp.append(("FPGA", "RTL · giả định clock 125 MHz", sim["samples_per_cycle"] * 125.0, "mô phỏng",
                         "PASS" if sim["pass"] else "FAIL"))
-        rows_lat.append(("FPGA", "pipeline FIR · 100 MHz", sim["continuous"]["latency_cycles"] * 10.0,
+        rows_lat.append(("FPGA", "pipeline FIR · 125 MHz", sim["continuous"]["latency_cycles"] * 8.0,
                          "mô phỏng", "mẫu vào → mẫu ra"))
     if impl:
         fmax = impl["fir16_ooc"]["fmax_mhz_est"]
         spc = (board or sim or {"samples_per_cycle": 1.0})["samples_per_cycle"]
-        rows_tp.append(("FPGA", f"XC7A100T · Fmax ≈ {fmax:.0f} MHz", spc * fmax, "ước lượng công cụ",
+        rows_tp.append(("FPGA", f"XC7Z020 · Fmax ≈ {fmax:.0f} MHz", spc * fmax, "ước lượng công cụ",
                         "Vivado timing, chỉ khối FIR"))
 
     # Nang luong / mau (nJ) = P / thong luong
@@ -99,10 +99,11 @@ def gather(include_x86):
         best = max(r[2] for r in pi_tp) * 1e6
         rows_en.append(("SoC", "Pi 4 cả board khi chạy FIR", pi_pw["fir_w"], pi_pw["fir_w"] / best * 1e9, "đo",
                         pi_pw.get("where", "")))
-    if impl and impl["top_100mhz"]["power_total_w"] not in (None, "null"):
-        p_w = float(impl["top_100mhz"]["power_total_w"])
+    top_impl = (impl.get("top_125mhz") or impl.get("top_100mhz")) if impl else None
+    if top_impl and top_impl["power_total_w"] not in (None, "null"):
+        p_w = float(top_impl["power_total_w"])
         spc = (board or sim or {"samples_per_cycle": 1.0})["samples_per_cycle"]
-        rows_en.append(("FPGA", "XC7A100T cả chip @100 MHz", p_w, p_w / (spc * 100e6) * 1e9,
+        rows_en.append(("FPGA", "XC7Z020 cả chip @125 MHz", p_w, p_w / (spc * 125e6) * 1e9,
                         "ước lượng công cụ", "Vivado vector-less, gồm static"))
 
     return dict(spec=spec, taps=taps, mcu=mcu, sim=sim, board=board, impl=impl,
@@ -140,7 +141,7 @@ def crosscheck(d):
     fpga_meas = next((r for r in d["tp"] if r[0] == "FPGA" and r[3] in ("đo", "mô phỏng")), None)
     if pi_best and fpga_meas:
         out.append(("Tỉ lệ thông lượng FPGA / CPU Cortex-A",
-                    f"{fpga_meas[2] / pi_best:.1f}× (FPGA 100 MHz, {fpga_meas[3]}) so với Pi 4 tốt nhất",
+                    f"{fpga_meas[2] / pi_best:.1f}× (FPGA 125 MHz, {fpga_meas[3]}) so với Pi 4 tốt nhất",
                     "Arucu & Iliev (nguồn): ≈27× so với Cortex-A9",
                     "Khác: chip CPU, số tap, cách đo"))
     for r in d["lat"]:
@@ -152,7 +153,7 @@ def crosscheck(d):
         out.append(("Tài nguyên DSP cho FIR 16-tap",
                     f"{o['dsp48e1']}/{o['dsp_available']} DSP48E1 ({o['dsp48e1'] / o['dsp_available'] * 100:.1f}%)",
                     "PLAN.md (tính): bài video cần ≈3,5% năng lực",
-                    "Tap có hệ số 0 bị synthesis loại bỏ"))
+                    "12 nhân (4 tap hệ số 0 bị lược bỏ) + 7 cộng cây 34-bit gộp vào DSP48E1"))
     return out
 
 
@@ -179,7 +180,7 @@ def write_md(d, xc):
           "| --- | --- | --- | --- |"]
     L += [f"| {a} | {b} | {c} | {e} |" for a, b, c, e in xc] or ["| — | chưa đủ số liệu | | |"]
     path = os.path.join(RES, "E5_crosscheck.md")
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(L) + "\n")
     return path
 
@@ -304,14 +305,15 @@ def write_tex(d):
     if src:
         lat_c = src.get("latency_cycles") or src["continuous"]["latency_cycles"]
         m["FpgaLatCycles"] = str(lat_c)
-        m["FpgaLatNs"] = vn(lat_c * 10.0, 0)
+        m["FpgaLatNs"] = vn(lat_c * 8.0, 0)
         m["FpgaPass"] = "PASS" if src["pass"] else "FAIL"
         m["FpgaSpc"] = vn(src["samples_per_cycle"], 2)
     if d["impl"]:
-        o, t = d["impl"]["fir16_ooc"], d["impl"]["top_100mhz"]
+        o = d["impl"]["fir16_ooc"]
+        t = d["impl"].get("top_125mhz") or d["impl"].get("top_100mhz")
         m["FpgaFmax"] = vn(o["fmax_mhz_est"], 0)
         m["FpgaDsp"] = str(o["dsp48e1"])
-        if t["power_total_w"] not in (None, "null"):
+        if t and t["power_total_w"] not in (None, "null"):
             m["FpgaPower"] = vn(float(t["power_total_w"]), 3)
     if fpga and pi_best:
         m["RatioFpgaPi"] = vn(fpga[2] / pi_best, 1)
@@ -334,7 +336,7 @@ def write_tex(d):
     lines.append(f"\\newcommand{{\\expHaveMcu}}{{{'1' if mcu else '0'}}}")
     lines.append(f"\\newcommand{{\\expHavePi}}{{{'1' if pi_best else '0'}}}")
     path = os.path.join(RES, "numbers.tex")
-    with open(path, "w") as f:
+    with open(path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
     return path
 

@@ -31,26 +31,27 @@ make mcu-capture MCU_PORT=/dev/ttyUSB0   # đọc kết quả serial -> results/
 - Khi `mcu-capture` báo đang chờ, **nhấn RESET** trên Blue Pill.
 - Sau khi in kết quả, board tự chuyển qua các pha đo dòng (RUN 20 s → SLEEP 20 s → STANDBY). Ghi số đo vào `results/e1_mcu_power.json`; file mẫu nằm ở `results/templates/`.
 
-## Arty A7-100T
+## Digilent Arty Z7-20 (`xc7z020clg400-1` @ 125 MHz)
 
-**Nối dây:** một cáp micro-USB vào cổng PROG/UART. Cáp này vừa nạp qua JTAG vừa dùng làm UART.
-
-```bash
-make fpga FPGA_PORT=/dev/ttyUSB1   # Vivado build + nạp + đọc kết quả
-```
-
-Lệnh trên gộp 3 bước. Có thể chạy riêng từng bước:
+**Nối dây:** cắm một cáp micro-USB vào cổng **PROG/UART (J14)** và bật công tắc nguồn (chọn nguồn USB hoặc jack ngoài).
+- Bitstream chạy trực tiếp trên vùng logic khả trình **Artix-7 PL** ở xung nhịp gốc **125 MHz** (chân `H16`, chu kỳ 8 ns $\rightarrow$ thông lượng 125 MSPS, độ trễ 7 chu kỳ = 56 ns).
+- Kết quả tự kiểm (`PASS`, `ERR`, `LAT`, `CYC`) được đọc **tự động qua chính cáp USB-JTAG** ngay trong `vivado/program.tcl` (thông qua khối `BSCANE2 USER4`), đồng thời cũng phát ra UART 115200 8N1 tại chân **Pmod `JA[0]` (chân 1 của cổng JA, pin `Y18`)**.
 
 ```bash
-make fpga-build                    # synth/impl/bitstream + báo cáo (5-10 phút)
-make fpga-flash                    # nạp bitstream qua JTAG
-make fpga-capture FPGA_PORT=/dev/ttyUSB1  # đọc dòng tự kiểm -> results/e2_fpga_board.json
+make fpga                          # Vivado build + nạp JTAG + tự đọc kết quả -> results/e2_fpga_board.json
 ```
 
-- Arty hiện ra **2 cổng** `ttyUSB`. Cổng UART thường là cổng thứ hai.
-- Cần chạy lại phép thử thì **nhấn BTN0**.
-- Đèn LED: LD4 = xong, LD5 = PASS, LD6 = FAIL, LD7 = nhịp tim (đang chạy).
-- Nạp qua JTAG chỉ lưu vào SRAM, tắt nguồn là mất. Mỗi lần cắm lại board phải chạy `make fpga-flash`.
+Có thể chạy riêng từng bước:
+
+```bash
+make fpga-build                    # synth/impl/bitstream + báo cáo (3-5 phút) -> results/e2_fpga_impl.json
+make fpga-flash                    # nạp bitstream qua JTAG + tự động đọc kết quả về results/e2_fpga_board.json
+make fpga-capture FPGA_PORT=/dev/ttyUSB1  # (tùy chọn) đọc qua USB-UART rời nối vào Pmod JA[0] (Y18)
+```
+
+- Cần chạy lại phép thử trên board: **nhấn BTN0** (chân `D19`) để chạy lại, hoặc **nhấn BTN1** (chân `D20`) để reset.
+- Đèn LED trên Arty Z7-20: **LD0** (`R14`) = xong, **LD1** (`P14`) = PASS, **LD2** (`N16`) = FAIL, **LD3** (`M14`) = nhịp tim (đang chạy).
+- Nạp qua JTAG lưu vào SRAM, tắt nguồn là mất. Mỗi lần bật lại board chạy `make fpga-flash`.
 
 ## Raspberry Pi 4 (qua SSH)
 
@@ -93,7 +94,7 @@ make clean     # xóa các thư mục build
 ```bash
 make sim
 make mcu  MCU_PORT=/dev/ttyUSB0
-make fpga FPGA_PORT=/dev/ttyUSB1
+make fpga
 make pi   PI=pi@192.168.1.50
 make collect
 ```

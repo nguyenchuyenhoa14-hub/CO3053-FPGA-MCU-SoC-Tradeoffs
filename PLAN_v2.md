@@ -51,7 +51,7 @@ Bài toán chung: **FIR 16-tap Q15**, cùng hệ số, cùng bộ vector đầu 
 ### E2. FPGA
 - Viết lại RTL pipeline. Có thể giữ ý tưởng cây cộng của file cũ, phần đó đúng.
 - Testbench đọc `vectors_in.txt` và tự so với `golden_out.txt`, báo PASS/FAIL (nhãn **mô phỏng**).
-- Synthesis bằng Yosys `synth_xilinx` để lấy số DSP/LUT. Nếu có Vivado thì lấy thêm Fmax và Power Report cho XC7A100T (nhãn **ước lượng công cụ**).
+- Synthesis bằng Yosys `synth_xilinx` hoặc Vivado cho Digilent Arty Z7-20 (`xc7z020clg400-1` @ 125 MHz) để lấy số DSP/LUT, Fmax và Power Report (nhãn **ước lượng công cụ**).
 - Nếu có board FPGA thật: nạp và kiểm tra qua UART hoặc ILA. Đây là phần cộng điểm, không bắt buộc.
 - **Đầu ra:** độ trễ (chu kỳ), thông lượng (mẫu/chu kỳ × Fmax), tài nguyên, công suất ước tính.
 
