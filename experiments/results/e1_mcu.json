@@ -1,0 +1,136 @@
+{
+  "label": "đo",
+  "experiment": "E1_mcu",
+  "chip": "STM32F103 Cortex-M3",
+  "board": "Blue Pill (STM32F103C6)",
+  "clock_source": "HSE8MHz_x9",
+  "clock_mhz": 72,
+  "cycle_counter": "DWT_CYCCNT",
+  "flash_wait_states": 2,
+  "counter_overhead_cycles": 28,
+  "num_samples": 1024,
+  "num_taps": 16,
+  "variants": [
+    {
+      "variant": "c_shift_loop",
+      "correct": true,
+      "mismatches": 0,
+      "first_bad": -1,
+      "block_cycles_min": 450192,
+      "block_cycles_median": 450192,
+      "block_cycles_max": 450192,
+      "cycles_per_sample": 439.64,
+      "ns_per_sample": 6106.12,
+      "ksps": 163.77
+    },
+    {
+      "variant": "c_circular_unrolled",
+      "correct": true,
+      "mismatches": 0,
+      "first_bad": -1,
+      "block_cycles_min": 221454,
+      "block_cycles_median": 221454,
+      "block_cycles_max": 221454,
+      "cycles_per_sample": 216.26,
+      "ns_per_sample": 3003.66,
+      "ksps": 332.93
+    },
+    {
+      "variant": "cmsis_arm_fir_q15",
+      "correct": true,
+      "mismatches": 0,
+      "first_bad": -1,
+      "block_cycles_min": 316083,
+      "block_cycles_median": 316083,
+      "block_cycles_max": 316083,
+      "cycles_per_sample": 308.67,
+      "ns_per_sample": 4287.15,
+      "ksps": 233.26
+    },
+    {
+      "variant": "cmsis_arm_fir_fast_q15",
+      "correct": true,
+      "mismatches": 0,
+      "first_bad": -1,
+      "block_cycles_min": 242482,
+      "block_cycles_median": 242482,
+      "block_cycles_max": 242482,
+      "cycles_per_sample": 236.8,
+      "ns_per_sample": 3288.87,
+      "ksps": 304.05
+    }
+  ],
+  "per_sample_cycles_circular": {
+    "min": 274,
+    "max": 282
+  },
+  "irq_latency": [
+    {
+      "scenario": "idle_loop",
+      "samples": 20000,
+      "min_cycles": 19,
+      "max_cycles": 19,
+      "avg_cycles": 19.0,
+      "min_ns": 263.89,
+      "max_ns": 263.89,
+      "over_255_cycles": 0,
+      "hist_bucket4": {
+        "16": 20000
+      }
+    },
+    {
+      "scenario": "fir_load",
+      "samples": 20000,
+      "min_cycles": 0,
+      "max_cycles": 25,
+      "avg_cycles": 19.72,
+      "min_ns": 0.0,
+      "max_ns": 347.22,
+      "over_255_cycles": 0,
+      "hist_bucket4": {
+        "0": 1,
+        "16": 16168,
+        "20": 3830,
+        "24": 1
+      }
+    },
+    {
+      "scenario": "fir_load_plus_higher_prio_isr_20us",
+      "samples": 20000,
+      "min_cycles": 0,
+      "max_cycles": 1575,
+      "avg_cycles": 35.24,
+      "min_ns": 0.0,
+      "max_ns": 21875.0,
+      "over_255_cycles": 331,
+      "hist_bucket4": {
+        "0": 1,
+        "16": 13086,
+        "20": 5925,
+        "24": 603,
+        "40": 4,
+        "44": 1,
+        "48": 1,
+        "64": 4,
+        "68": 1,
+        "72": 1,
+        "88": 4,
+        "92": 2,
+        "112": 1,
+        "116": 1,
+        "120": 4,
+        "136": 2,
+        "140": 4,
+        "160": 2,
+        "164": 4,
+        "184": 5,
+        "188": 1,
+        "208": 4,
+        "212": 1,
+        "216": 1,
+        "232": 4,
+        "236": 2
+      }
+    }
+  ]
+}
