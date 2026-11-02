@@ -8,10 +8,10 @@
   "dsp_mode": "none (LUT-only)",
   "fir16_ooc": {"target_period_ns": 2.5, "wns_ns": -4.928, "fmax_mhz_est": 134.6,
                 "dsp48e1": 0, "lut": 1672, "ff": 1046, "dsp_available": 220, "lut_available": 53200, "ff_available": 106400},
-  "top_125mhz": {"clock_mhz": 125.0, "period_ns": 8.0, "wns_ns": -0.102, "fir_dsp48e1": 0, "bram_tiles": 2,
-                 "power_total_w": 0.117, "power_dynamic_w": 0.011, "power_static_w": 0.106,
+  "top_125mhz": {"clock_mhz": 125.0, "period_ns": 8.0, "wns_ns": 0.326, "fir_dsp48e1": 0, "bram_tiles": 2,
+                 "power_total_w": 0.124, "power_dynamic_w": 0.018, "power_static_w": 0.106,
                  "power_note": "Vivado report_power vector-less @125 MHz (LUT-only), toggle mac dinh; gom ca UART/BRAM/IO"},
-  "top_100mhz": {"clock_mhz": 125.0, "period_ns": 8.0, "wns_ns": -0.102, "fir_dsp48e1": 0, "bram_tiles": 2,
-                 "power_total_w": 0.117, "power_dynamic_w": 0.011, "power_static_w": 0.106,
+  "top_100mhz": {"clock_mhz": 125.0, "period_ns": 8.0, "wns_ns": 0.326, "fir_dsp48e1": 0, "bram_tiles": 2,
+                 "power_total_w": 0.124, "power_dynamic_w": 0.018, "power_static_w": 0.106,
                  "power_note": "Alias tuong thich nguoc cho top_125mhz tren Arty Z7-20"}
 }

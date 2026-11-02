@@ -172,11 +172,11 @@ y[n]=\operatorname{sat}_{16}\!\Big(\big\lfloor \textstyle\sum_{k=0}^{15} h[k]\,x
   \item Đếm chu kỳ bằng \texttt{DWT->CYCCNT} khi đã tắt ngắt.
   \item Đo độ trễ ngắt: TIM2 ở 10 kHz, ISR đọc \texttt{TIM2->CNT} ngay lệnh đầu tiên, lấy 20\,000 mẫu cho mỗi kịch bản.
   \end{itemize}
-\item \textbf{E2, \FPGA{} Digilent Arty Z7-20 (XC7Z020 PL @ 125 MHz).}
+\item \textbf{E2, \FPGA{} Digilent Arty Z7-20 (XC7Z020 PL @ 125 MHz, thuần LUT / 0 DSP).}
   \begin{itemize}
-  \item RTL pipeline 7 tầng, có bão hòa, tổng hợp trên vùng logic khả trình Artix-7 PL của chip Zynq-7020 (\texttt{xc7z020clg400-1}, có 220 khối DSP48E1 và 53\,200 LUT). Testbench chạy hai lượt: liên tục và có khoảng trống ngẫu nhiên trên \texttt{in\_valid}.
+  \item RTL pipeline 7 tầng, có bão hòa, tổng hợp ở chế độ thuần logic (\texttt{(* use\_dsp = "no" *)}, \texttt{-max\_dsp 0}) trên vùng khả trình Artix-7 PL của chip Zynq-7020 (\texttt{xc7z020clg400-1}: 220 DSP48E1, 53\,200 LUT, 106\,400 FF). Testbench chạy hai lượt: liên tục và có khoảng trống ngẫu nhiên trên \texttt{in\_valid}.
   \item Trên board: đọc 1024 mẫu từ BRAM ở xung nhịp gốc 125 MHz (chu kỳ 8 ns, chân \texttt{H16}), so với golden ngay trên chip, đếm chu kỳ và báo kết quả qua JTAG/UART.
-  \item Vivado cho Fmax, số tài nguyên và công suất \nhan{ước lượng công cụ}.
+  \item Vivado cho Fmax, số tài nguyên (LUT, FF, DSP) và công suất \nhan{ước lượng công cụ}.
   \end{itemize}
 \item \textbf{E3, \SoC{} Raspberry Pi 4.}
   \begin{itemize}
@@ -206,6 +206,7 @@ y[n]=\operatorname{sat}_{16}\!\Big(\big\lfloor \textstyle\sum_{k=0}^{15} h[k]\,x
 \FPGA & Mẫu/chu kỳ; thông lượng ở 125 MHz (MSPS) & \expFpgaSpc{}; \expFpgaMsps & \nhan{\expFpgaLabel}\\
 \FPGA & Độ trễ pipeline (ở 125 MHz) & \expFpgaLatCycles{} chu kỳ = \expFpgaLatNs{} ns & \nhan{\expFpgaLabel}\\
 \FPGA & Fmax của riêng khối FIR (MHz); số DSP48E1 (trên 220) & \expFpgaFmax{}; \expFpgaDsp & \nhan{ước lượng công cụ}\\
+\FPGA & Tài nguyên logic thuần LUT: LUT (trên 53\,200); FF (trên 106\,400) & \expFpgaLut{}; \expFpgaFf & \nhan{ước lượng công cụ}\\
 \FPGA & Công suất cả chip ở 125 MHz (W) & \expFpgaPower & \nhan{ước lượng công cụ}\\
 \bottomrule
 \end{tabularx}
@@ -226,7 +227,7 @@ y[n]=\operatorname{sat}_{16}\!\Big(\big\lfloor \textstyle\sum_{k=0}^{15} h[k]\,x
 \item \textbf{FPGA so với CPU.} FPGA ở 125 MHz nhanh hơn Pi 4 \expRatioFpgaPi{} lần và nhanh hơn MCU \expRatioFpgaMcu{} lần với bài 16-tap này. Arucu \& Iliev đo được khoảng 27 lần so với Cortex-A9 với bài 27-tap (cũng trên chip XC7Z020). Khi so, cần nhớ khác biệt về chip CPU, số tap và cách đo.
 \item \textbf{Một quan sát phụ.} Khi chạy thử code trên laptop x86, nhóm thấy một lõi CPU desktop lọc được khoảng 140 MSPS với bài 16-tap. Như vậy FPGA không thắng chỉ nhờ tốc độ thô ở bài nhỏ. Lợi thế của FPGA nằm ở chỗ khác:
   \begin{itemize}
-  \item thông lượng giữ nguyên khi tăng số tap, chỉ tốn thêm DSP;
+  \item thông lượng giữ nguyên khi tăng số tap, chỉ tốn thêm LUT/DSP;
   \item độ trễ cố định theo số chu kỳ;
   \item công suất thấp.
   \end{itemize}

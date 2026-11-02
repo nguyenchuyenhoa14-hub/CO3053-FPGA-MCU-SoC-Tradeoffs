@@ -18,12 +18,18 @@ __pycache__/
 Thumbs.db
 desktop.ini
 
-# experiments
+# experiments & Vivado
 experiments/**/build/
 experiments/e1_mcu/.pio/
+.Xil/
+*.jou
+*.str
+*.dmp
 
 # LaTeX
 report/*.aux
+report/*.bbl
+report/*.blg
 report/*.log
 report/*.nav
 report/*.out

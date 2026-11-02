@@ -14,8 +14,8 @@ PYSERIAL ?= $(shell dirname $(PIO))/python3
 PYPLOT   ?= /usr/bin/python3
 VIVADO   ?= vivado
 
-# ---- Cong serial / may Pi ----
-MCU_PORT  ?= /dev/ttyUSB0
+# ---- Cong serial / SWD / may Pi ----
+MCU_PORT  ?= swd
 FPGA_PORT ?= /dev/ttyUSB1
 PI        ?= pi@raspberrypi.local
 PI_DIR    ?= ~/co3053-experiments
@@ -33,10 +33,10 @@ help:
 	@echo "  make golden          sinh he so + vector + golden (E0)"
 	@echo "  make sim             mo phong RTL FIR, tu so golden (E2a)"
 	@echo "  make wave            mo phong + mo GTKWave"
-	@echo "STM32F103 (ST-Link + USB-UART o $(MCU_PORT)):"
-	@echo "  make mcu-build       build firmware"
+	@echo "STM32F103 (ST-Link SWD hoac USB-UART o $(MCU_PORT)):"
+	@echo "  make mcu-build       build firmware (mac dinh f103c6)"
 	@echo "  make mcu-flash       build + nap qua ST-Link"
-	@echo "  make mcu-capture     doc ket qua serial -> results/e1_mcu.json"
+	@echo "  make mcu-capture     doc ket qua qua SWD (mac dinh) hoac serial -> results/e1_mcu.json"
 	@echo "  make mcu             = flash + capture"
 	@echo "Digilent Arty Z7-20 (xc7z020clg400-1 @ 125 MHz, USB-JTAG / UART o $(FPGA_PORT)):"
 	@echo "  make fpga-build      Vivado synth/impl/bitstream + bao cao (3-5 phut)"

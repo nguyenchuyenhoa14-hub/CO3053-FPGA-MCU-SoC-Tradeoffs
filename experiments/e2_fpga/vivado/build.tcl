@@ -52,9 +52,10 @@ create_project -in_memory -part $part
 read_verilog [list "$root/rtl/fir16.v" "$root/rtl/uart_tx.v" "$root/rtl/top_arty.v"]
 read_xdc "$root/constr/arty_z7_20.xdc"
 synth_design -top top_arty -part $part -include_dirs "$root/rtl" -max_dsp 0
-opt_design
-place_design
-route_design
+opt_design -directive Explore
+place_design -directive Explore
+phys_opt_design -directive Explore
+route_design -directive Explore
 report_utilization -hierarchical -file top_util_hier.rpt
 report_utilization     -file top_util.rpt
 report_timing_summary  -file top_timing.rpt

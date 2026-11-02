@@ -139,6 +139,16 @@ def crosscheck(d):
 
     pi_best = max((r[2] for r in d["tp"] if r[0] == "SoC"), default=None)
     fpga_meas = next((r for r in d["tp"] if r[0] == "FPGA" and r[3] in ("đo", "mô phỏng")), None)
+    if mcu and fpga_meas:
+        best = max((v for v in mcu["variants"] if v["correct"]), key=lambda v: v["ksps"])
+        mcu_msps = best["ksps"] / 1000.0
+        mcu_ns = best["ns_per_sample"]
+        fpga_lat_ns = (d["board"] or {}).get("latency_ns", 56.0)
+        out.append(("Tỉ lệ thông lượng và độ trễ FPGA / MCU (cùng bài FIR 16-tap)",
+                    f"Thông lượng gấp {fpga_meas[2] / mcu_msps:.0f}× ({fpga_meas[2]:.1f} vs {mcu_msps:.2f} MSPS); "
+                    f"độ trễ nhanh hơn {mcu_ns / fpga_lat_ns:.1f}× ({fpga_lat_ns:.0f} vs {mcu_ns:.0f} ns)",
+                    "Kiến trúc song song không gian (1 mẫu/chu kỳ) vs tuần tự Cortex-M3",
+                    "FPGA giữ nguyên 1 mẫu/chu kỳ khi tăng số tap, còn MCU tăng tuyến tính theo số tap"))
     if pi_best and fpga_meas:
         out.append(("Tỉ lệ thông lượng FPGA / CPU Cortex-A",
                     f"{fpga_meas[2] / pi_best:.1f}× (FPGA 125 MHz, {fpga_meas[3]}) so với Pi 4 tốt nhất",
@@ -320,6 +330,8 @@ def write_tex(d):
         t = d["impl"].get("top_125mhz") or d["impl"].get("top_100mhz")
         m["FpgaFmax"] = vn(o["fmax_mhz_est"], 0)
         m["FpgaDsp"] = str(o["dsp48e1"])
+        m["FpgaLut"] = vn(o["lut"], 0)
+        m["FpgaFf"] = vn(o["ff"], 0)
         if t and t["power_total_w"] not in (None, "null"):
             m["FpgaPower"] = vn(float(t["power_total_w"]), 3)
     if fpga and pi_best:
@@ -334,8 +346,8 @@ def write_tex(d):
 
     keys = ["McuClock", "McuBestVariant", "McuBestCps", "McuBestMsps", "McuEff", "McuShiftCps",
             "McuIrqMin", "McuIrqMax", "McuIrqRange", "McuIrqHogMax", "PiBestMsps", "FpgaMsps", "FpgaLabel",
-            "FpgaLatCycles", "FpgaLatNs", "FpgaPass", "FpgaSpc", "FpgaFmax", "FpgaDsp", "FpgaPower",
-            "RatioFpgaPi", "RatioFpgaMcu", "LinuxStdMax", "LinuxRtMax"]
+            "FpgaLatCycles", "FpgaLatNs", "FpgaPass", "FpgaSpc", "FpgaFmax", "FpgaDsp", "FpgaLut", "FpgaFf",
+            "FpgaPower", "RatioFpgaPi", "RatioFpgaMcu", "LinuxStdMax", "LinuxRtMax"]
     lines = ["% TU DONG SINH boi experiments/e5_crosscheck/collect.py - KHONG SUA TAY",
              "% So chua do hien \\chuado{} (report dinh nghia macro nay)."]
     for k in keys:

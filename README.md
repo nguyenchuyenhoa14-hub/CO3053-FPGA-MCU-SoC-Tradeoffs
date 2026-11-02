@@ -1,135 +1,174 @@
 # CHUYÊN ĐỀ HỆ THỐNG NHÚNG — [HK261] CO3053
-## ĐỀ TÀI 09: FPGA và MCU và SoC — Đánh đổi Hiệu năng, Chi phí, Độ linh hoạt
+## ĐỀ TÀI 09: So sánh MCU – SoC – FPGA: Đánh đổi giữa Hiệu năng, Chi phí và Độ linh hoạt
 ### *(FPGA vs. MCU vs. SoC — Trade-offs in Performance, Cost, and Flexibility)*
 
 ---
 
-## 📌 1. Tổng Quan Đề Tài & Mục Tiêu Nghiên Cứu
+## 📌 1. Câu Hỏi Nghiên Cứu & Nguyên Tắc Minh Bạch Số Liệu
 
-Trong kỷ nguyên bùng nổ của Trí tuệ nhân tạo biên (Edge AI), Robot tự hành và các hệ thống thời gian thực khắt khe, việc lựa chọn nền tảng điện toán phần cứng tối ưu đóng vai trò quyết định đến sự thành bại của một sản phẩm hệ thống nhúng. Dự án này tiến hành nghiên cứu đối sánh chuyên sâu giữa ba nền tảng phổ biến nhất:
+Dự án trả lời câu hỏi cốt lõi trong thiết kế hệ thống nhúng: **Khi nào nên chọn Vi điều khiển (MCU), Hệ thống trên vi mạch (SoC chạy Linux), hay Mảng logic khả trình (FPGA) — hoặc phương án lai CPU + FPGA — xét theo hiệu năng, chi phí và độ linh hoạt?**
 
-1. **Vi điều khiển (Microcontroller Unit - MCU):** Kiến trúc tuần tự theo thời gian (*Temporal Computing*) dựa trên chu trình nạp - giải mã - thực thi chỉ lệnh (*Fetch – Decode – Execute*), tối ưu cho tiêu thụ điện chế độ nghỉ siêu thấp và chi phí linh kiện tối thiểu.
-2. **Mảng logic khả trình (Field-Programmable Gate Array - FPGA):** Kiến trúc song song trên không gian phần cứng (*Spatial Computing*) cấu thành từ các khối CLB/LUT, DSP Slices và Block RAM, cung cấp thông lượng ở tốc độ đường truyền và tính tiền định chính xác theo chu kỳ xung nhịp (*Cycle-accurate determinism* với độ dao động ngắt Jitter bằng 0.00 ns).
-3. **Hệ thống trên một vi mạch dị thể (Heterogeneous SoC):** Tích hợp phân hệ vi xử lý ứng dụng (Processing System - PS) và phân hệ logic khả trình (Programmable Logic - PL) trên cùng một đế bán dẫn nguyên khối (Monolithic Die), điển hình như AMD/Xilinx Zynq-7000 kết nối qua chuẩn bus nội mạch tốc độ cao **AMBA AXI4**.
+Tuân thủ phương pháp đánh giá hiệu năng (`pe2`, `pe3`), bài nghiên cứu không đặt mục tiêu thiên vị bất kỳ nền tảng nào. Mọi con số trong báo cáo, slide và biểu đồ đều mang **nhãn nguồn gốc minh bạch**:
 
----
-
-## ⚖️ 2. Ma Trận Đánh Đổi Kỹ Thuật Đa Chiều
-
-| Tiêu chí đánh giá | Vi điều khiển (MCU) | FPGA Độc lập | Heterogeneous SoC (Zynq) |
-|:---|:---:|:---:|:---:|
-| **Mô hình tính toán** | Tuần tự theo thời gian (*Temporal*) | Song song không gian (*Spatial*) | Lai: Tuần tự (PS) + Song song (PL) |
-| **Độ trễ phản hồi vật lý** | Micro-giây ($1 - 10\ \mu\text{s}$) | Nano-giây ($< 10\ \text{ns}$) | Phân tầng: $\text{ns}$ tại PL / $\mu\text{s}$ tại PS |
-| **Độ dao động ngắt (Jitter)** | Kèm Jitter do RTOS & ngắt | **0.00 ns (Tiền định 100%)** | 0.00 ns tại logic / $< 1\ \mu\text{s}$ qua DMA |
-| **Thông lượng DSP (Throughput)** | $4.66 - 13.33\ \text{MSPS}$ | **$100.0\ \text{MSPS}$** | **$150.0\ \text{MSPS}$** |
-| **Công suất chế độ nghỉ** | **Cực thấp ($\mu\text{A} - \text{nA}$)** | Trung bình - Cao (dòng rò SRAM) | Phụ thuộc chế độ Sleep của CPU |
-| **Hiệu quả năng lượng DSP** | $18.64\ \text{MSamples/Joule}$ | **$83.33\ \text{MSamples/Joule}$** | $60.00\ \text{MSamples/Joule}$ |
-| **Chi phí thiết kế ban đầu (NRE)**| Rất thấp (công cụ mở, dev C nhanh) | Rất cao (kỹ sư HDL, Timing Closure)| Cao (đòi hỏi Linux + Phần cứng số) |
-| **Đơn giá linh kiện (Unit BOM)** | **Rất rẻ ($0.50 - $10)** | Trung bình - Đắt ($20 - $200+) | Trung bình - Cao ($30 - $350+) |
-| **Thời gian ra thị trường (TTM)**| Rất ngắn (1 - 3 tháng) | Dài (6 - 12 tháng) | Trung bình (4 - 8 tháng) |
+| Nhãn | Ý nghĩa | Minh chứng trong dự án |
+| :--- | :--- | :--- |
+| **`[đo]`** | Nhóm tự đo trực tiếp trên phần cứng vật lý | Đếm chu kỳ `DWT->CYCCNT` & ngắt `TIM2` trên **STM32F103C6 (Blue Pill @ 72 MHz)**; tự kiểm trên chip **Digilent Arty Z7-20 (`xc7z020clg400-1` @ 125 MHz)** qua JTAG `BSCANE2` |
+| **`[mô phỏng]`** | Kết quả từ trình mô phỏng chu kỳ chính xác | Icarus Verilog (`tb_fir16.v`, `tb_top_arty.v`) kiểm tra 2 kịch bản liên tục và ngắt quãng |
+| **`[ước lượng công cụ]`** | Báo cáo tổng hợp & phân tích từ công cụ EDA | AMD Vivado 2025.1.1 (`report_utilization`, `report_timing_summary`, `report_power` vector-less) |
+| **`[tính]`** | Tính toán giải tích từ số đo/thông số kèm giả thiết | Tỉ lệ hiệu suất thực tế so với giả thiết lý thuyết $1\text{ MAC/chu kỳ}$ |
+| **`[nguồn]`** | Trích dẫn từ tài liệu học thuật và datasheet hãng | STMicroelectronics, AMD/Xilinx, OpenBenchmarking, AC6, Arucu & Iliev (2025), Kou et al. (2023)... |
 
 ---
 
-## 🔬 3. Bộ Thực Nghiệm Đối Sánh Định Lượng (`demo/`)
+## 🔬 2. Kết Quả Thực Nghiệm Trên Phần Cứng Vật Lý (`experiments/`)
 
-Để kiểm chứng lý thuyết bằng số liệu thực nghiệm định lượng, nhóm đã hiện thực bài toán kinh điển trong xử lý tín hiệu số: **Thuật toán bộ lọc số FIR 16-tap dạng dấu phẩy tĩnh Q15** ($y[n] = \lfloor \sum_{k=0}^{15} h[k] \cdot x[n-k] / 2^{15} \rfloor$) trên cả ba nền tảng:
+Ba nền tảng cùng thực thi một bài toán chuẩn duy nhất (**E0 — Golden Model**): **Bộ lọc số thông thấp FIR 16-tap định dạng dấu phẩy tĩnh Q15** (cửa sổ Hamming, $f_c = 0{,}2 f_s$, tổng hệ số $= 2^{15}$) với bộ bão hòa 16-bit chuẩn:
+$$y[n] = \operatorname{sat}_{16}\!\left(\left\lfloor \frac{\sum_{k=0}^{15} h[k]\,x[n-k]}{2^{15}} \right\rfloor\right)$$
+Bộ vector kiểm thử gồm **1 024 mẫu** (seed `3053`: xung đơn vị, bậc thang, biên $\pm 32767$, chuỗi ngẫu nhiên và chuỗi đối kháng gây bão hòa tại **60 mẫu đầu ra**). Mọi nền tảng bắt buộc phải khớp **từng mẫu (0 sai lệch / 1 024 mẫu)** với `golden_out.hex`.
 
-### A. Vi điều khiển ARM Cortex-M (`demo/mcu_firmware/fir_mcu.c`)
-- Hiện thực bằng C tối ưu với vòng lặp khai triển 16 bước nhân-cộng (Loop unrolling).
-- Đo đạc chính xác chu kỳ CPU: mất trung bình **36 chu kỳ xung nhịp / mẫu** do chi phí nạp toán hạng từ SRAM, cập nhật trễ tuần tự và chia sẻ ALU.
-- Thông lượng tối đa trên STM32F4 (168 MHz): **4.66 MSamples/s** (214.28 ns/mẫu).
-- Thông lượng tối đa trên STM32H7 (480 MHz): **13.33 MSamples/s** (75.00 ns/mẫu).
+### A. Thực nghiệm E1 — Vi điều khiển STM32F103C6 (Blue Pill, ARM Cortex-M3 @ 72 MHz) `[đo]`
+- **Phần cứng & Công cụ:** Chip `STM32F103C6T6` (32 KB Flash, 10 KB SRAM), khóa pha PLL ở **72,0 MHz** từ thạch anh ngoài `HSE 8 MHz × 9` (`2 Flash wait states`). Biên dịch bằng `arm-none-eabi-gcc -O2` (PlatformIO bare-metal CMSIS), nạp và trích xuất dữ liệu trực tiếp từ SRAM qua **ST-Link V2 (SWD @ 950 kHz)**.
+- **Đếm chu kỳ phần cứng:** Sử dụng thanh ghi `DWT->CYCCNT` (overhead đo = 28 chu kỳ) khi đã khóa ngắt, lấy trung vị (median) qua 7 lượt chạy.
+- **Kết quả thông lượng 4 biến thể FIR (1 024 mẫu):**
 
-### B. Mạch phần cứng FPGA Artix-7 (`demo/fpga_rtl/fir_filter_16tap.v`)
-- Hiện thực bằng Verilog HDL với cấu trúc đường ống đồng bộ 5 tầng (5-Stage Pipelined Architecture).
-- Tầng 1 gồm 16 bộ nhân DSP hoạt động song song đồng thời; Tầng 2–5 là cây cộng dồn nhị phân 4 mức ($16 \rightarrow 8 \rightarrow 4 \rightarrow 2 \rightarrow 1$).
-- **Kiểm chứng tương đương mức bit (Bit-Accurate Verification):** Khi kích thích bằng xung bước nhảy $x[n] = 1000$, cả phần mềm C trên MCU và mạch RTL Verilog đều cho ra dãy 20 mẫu đáp ứng quá độ và xác lập **khớp nhau 100% với sai số 0 LSB**:
-  $$y[1..20] = \{-4, 1, 12, 34, 72, 130, 205, 290, 375, 450, 508, 546, 568, 579, 584, 581, 581, 581, 581, 581\}$$
-- Sau 5 chu kỳ khởi động đường ống (50 ns @ 100 MHz), mạch xuất ra **đúng 1 mẫu kết quả trên mỗi chu kỳ xung nhịp (Throughput = 100.0 MSPS)**, nhanh hơn **gấp 21.4 lần** so với Cortex-M4.
+| Biến thể thuật toán | Khớp Golden | Chu kỳ / khối (1024 mẫu) | Chu kỳ / mẫu | Thời gian / mẫu | Thông lượng |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **`c_circular_unrolled` (Tối ưu nhất)** | **1024/1024 (0 lỗi)** | **221 454** | **216,26** | **3 003,66 ns** | **332,93 kS/s (0,33 MSPS)** |
+| `cmsis_arm_fir_fast_q15` | 1024/1024 (0 lỗi) | 242 482 | 236,80 | 3 288,87 ns | 304,05 kS/s (0,30 MSPS) |
+| `cmsis_arm_fir_q15` | 1024/1024 (0 lỗi) | 316 083 | 308,67 | 4 287,15 ns | 233,26 kS/s (0,23 MSPS) |
+| `c_shift_loop` (Dịch mảng cơ bản) | 1024/1024 (0 lỗi) | 450 192 | 439,64 | 6 106,12 ns | 163,77 kS/s (0,16 MSPS) |
 
-### C. Mô phỏng Heterogeneous SoC Zynq-7000 (`demo/soc_emulation/soc_axi_dma_sim.py`)
-- Mô hình hóa cơ chế tăng tốc qua luồng truyền **AXI4-Stream DMA chồng lấp (`MM2S` $\rightarrow$ `FIR_16TAP` $\rightarrow$ `S2MM`)** giữa nhân ARM Cortex-A9 (PS) và bộ tăng tốc FPGA (PL).
-- Phân tích chi phí mặt phẳng điều khiển cố định: $T_{\text{setup}} = 350\text{ ns}$ (ghi thanh ghi cấu hình qua AXI4-Lite) và $T_{\text{IRQ}} = 850\text{ ns}$ (độ trễ phản hồi ngắt GIC).
-- **Kết quả đánh đổi theo kích thước gói $N$:**
-  - Gói nhỏ ($N = 16$): Chi phí khởi tạo $1.20\ \mu\text{s}$ chiếm ưu thế $\rightarrow$ Tăng tốc chậm hơn CPU ($0.34\times$).
-  - Ngưỡng hòa vốn: Đạt được tại $N \approx 48$ mẫu.
-  - Gói lớn ($N \ge 1.024$): Đường ống AXI4-Stream phát huy tối đa thông lượng, tăng tốc **$3.78\times - 4.48\times$** so với Cortex-A9 667 MHz (và **$>30\times$** so với Cortex-M4), đồng thời **giải phóng 96.1% – 99.9% tải CPU** cho hệ điều hành Linux.
+> **Nhận xét kỹ thuật:** Do lõi **ARM Cortex-M3 không có tập lệnh SIMD/DSP** (như lệnh nhân-cộng kép `SMLAD` trên Cortex-M4/M7), phiên bản bộ đệm vòng khai triển vòng lặp (`c_circular_unrolled`) đạt hiệu năng cao nhất (**0,33 MSPS**), tương đương **7%** so với cận trên lý thuyết "1 MAC/chu kỳ".
 
----
+- **Kết quả đo độ trễ ngắt phần cứng (`TIM2` @ 10 kHz, 20 000 lần ngắt mỗi kịch bản):**
 
-## 📊 4. Bộ Biểu Đồ Đối Sánh Khoa Học 300 DPI (`demo/outputs/charts/`)
-
-| Tên tệp tin đồ thị | Nội dung thể hiện | Thông điệp kỹ thuật cốt lõi |
-|:---|:---|:---|
-| **`chart1_throughput_comparison.png`** | Đối sánh thông lượng xử lý mẫu (MSPS) trên 5 nền tảng | FPGA đạt 100 MSPS (nhanh gấp 21.4x lần Cortex-M4 @ 168 MHz) dù xung nhịp thấp hơn 40%. |
-| **`chart2_latency_and_jitter.png`** | Độ trễ phản hồi vật lý và dao động Jitter thời gian thực (thang Log) | FPGA phản hồi trong 10.0 ns với Jitter 0.00 ns, vượt trội hoàn toàn so với Jitter micro-giây của MCU. |
-| **`chart3_energy_efficiency.png`** | Hiệu quả năng lượng tính toán (Triệu mẫu xử lý / Joule) | FPGA đạt 83.3 MSamples/J (gấp 4.5x lần Cortex-M4) do không tốn điện nạp - giải mã lệnh tuần tự. |
-| **`chart4_breakeven_cost_analysis.png`** | Phân tích kinh tế NRE vs. BOM và điểm hòa vốn sản xuất | Xác định điểm hòa vốn giữa FPGA và ASIC chuyên dụng tại quy mô $\approx 42.000$ thiết bị thương mại. |
-| **`chart5_soc_dma_offload.png`** | Đánh đổi kích thước gói AXI4-Stream DMA và tỷ lệ giải phóng CPU | Gói nhỏ ($N < 48$) nên tính trên CPU; gói lớn ($N \ge 1024$) tăng tốc 4.48x và giải phóng 99% CPU cho Linux. |
-| **`chart6_fpga_waveform_timing.png`** | Giản đồ xung nhịp mô phỏng RTL (clk, valid_in, data_in, valid_out, data_out) | Minh chứng trực quan độ trễ pipeline 5 chu kỳ (50 ns) và xuất 1 mẫu/chu kỳ khớp bit-accurate $y[n]$. |
+| Kịch bản tải hệ thống | Số mẫu | Nhỏ nhất | Trung bình | Xấu nhất (Max) | Quy đổi thời gian (Max) |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **1. `idle_loop` (CPU rảnh)** | 20 000 | 19 chu kỳ | 19,00 chu kỳ | **19 chu kỳ** | **263,89 ns** (Jitter = 0) |
+| **2. `fir_load` (CPU chạy FIR liên tục)** | 20 000 | 0 chu kỳ | 19,72 chu kỳ | **25 chu kỳ** | **347,22 ns** |
+| **3. `fir_load_plus_higher_prio_isr_20us`** | 20 000 | 0 chu kỳ | 35,24 chu kỳ | **1 575 chu kỳ** | **21,88 µs** (331 lần > 255 chu kỳ) |
 
 ---
 
-## 🚀 5. Hướng Dẫn Chạy Thực Nghiệm 1-Click
+### B. Thực nghiệm E2 — FPGA Digilent Arty Z7-20 (`xc7z020clg400-1` @ 125 MHz, Thuần LUT / 0 DSP) `[đo]` & `[ước lượng công cụ]`
+- **Kiến trúc phần cứng RTL (`experiments/e2_fpga/rtl/fir16.v`):**
+  - Thiết kế đường ống đồng bộ **7 tầng thanh ghi (`S0..S6`)**, nhận và xuất liên tục **1 mẫu / chu kỳ xung nhịp**.
+  - Thực thi ở **chế độ thuần Soft-Logic (LUT-only, 0 khối DSP48E1)** bằng thuộc tính RTL `(* use_dsp = "no" *)` và cờ tổng hợp Vivado `-max_dsp 0`: toàn bộ 16 bộ nhân song song (tầng `S1`) và cây cộng nhị phân 4 mức 34-bit (`S2..S5`) được ánh xạ hoàn toàn lên mạng **Slice LUTs + chuỗi nhớ nhanh `CARRY4`**.
+- **Mạch tự kiểm trên chip (`top_arty.v`):**
+  - Chạy trực tiếp trên vùng logic khả trình **Artix-7 PL** của chip `xc7z020clg400-1` với nguồn xung nhịp gốc **125,0 MHz** (chân `H16`, chu kỳ $8{,}0\text{ ns}$).
+  - Sau khi nạp bitstream, FSM tự động bơm 1 024 mẫu từ Block RAM vào bộ lọc FIR, đối chiếu từng mẫu đầu ra với `golden_out.hex` ngay trên chip và xuất kết quả qua giao diện **JTAG `BSCANE2` (`USER4`)** cùng cổng **UART 115200 8N1** (chân Pmod `JA[0]` = `Y18`).
+- **Thông số đo thực tế trên board & Báo cáo Vivado 2025.1.1:**
 
-Kho lưu trữ đã được cấu hình sẵn sàng để thực thi trên hệ điều hành Windows:
+| Chỉ số kỹ thuật | Giá trị thực tế | Nhãn nguồn gốc | Ghi chú chi tiết |
+| :--- | :---: | :---: | :--- |
+| **Chuỗi báo cáo từ chip** | `PASS N=0400 ERR=0000 LAT=0007 CYC=00000407 FBAD=FFFF` | **`[đo]`** | Đọc trực tiếp qua JTAG `USER4` từ board Arty Z7-20 |
+| **Độ chính xác bit-accurate** | **PASS 1 024 / 1 024 mẫu (0 lỗi)** | **`[đo]`** | Khớp tuyệt đối 100% với golden model (kể cả 60 mẫu bão hòa) |
+| **Độ trễ đường ống (Latency)** | **7 chu kỳ = 56,0 ns** | **`[đo]`** | Tiền định tuyệt đối theo chu kỳ xung nhịp (0 chu kỳ jitter) |
+| **Tổng chu kỳ xử lý 1 024 mẫu** | **1 031 chu kỳ** ($1024 + 7$) | **`[đo]`** | Xử lý xong toàn bộ 1 024 mẫu trong $8{,}248\ \mu\text{s}$ |
+| **Thông lượng trên board (@ 125 MHz)** | **1,0000 mẫu/chu kỳ = 125,00 MSPS** | **`[đo]`** | **Nhanh gấp 375× thông lượng** và **53,6× độ trễ** so với MCU |
+| **Số khối DSP48E1 sử dụng** | **0 / 220 (0,00%)** | **`[ước lượng công cụ]`** | Thuần logic LUT (`use_dsp = "no"`, `-max_dsp 0`) |
+| **Tài nguyên Slice LUTs (khối FIR)** | **1 672 / 53 200 (3,14%)** | **`[ước lượng công cụ]`** | 16 bộ nhân Q15 + cây cộng 34-bit bằng LUT + `CARRY4` |
+| **Tài nguyên Thanh ghi FF (khối FIR)** | **1 046 / 106 400 (0,98%)** | **`[ước lượng công cụ]`** | 7 tầng thanh ghi pipeline |
+| **Block RAM (`top_arty`)** | **2 / 140 tiles (1,43%)** | **`[ước lượng công cụ]`** | Lưu trữ `vectors_in.hex` và `golden_out.hex` |
+| **Tần số tối đa khối FIR ($F_{\max}$)** | **$\approx 134,6\text{ MHz}$** ($\approx 134{,}6\text{ MSPS}$) | **`[ước lượng công cụ]`** | Phân tích định thời Out-of-Context của Vivado (`WNS = +0,326 ns` trên `top_arty` @ 125 MHz) |
+| **Công suất toàn chip (@ 125 MHz)** | **0,124 W** (Dynamic `0,018 W` + Static `0,106 W`) | **`[ước lượng công cụ]`** | Tiêu tốn $\approx \mathbf{0{,}99\text{ nJ/mẫu}}$ (thấp hơn bản dùng DSP `0,129 W`) |
 
-### Yêu cầu môi trường:
-- Trình biên dịch C: `gcc` (MinGW / MSYS2 / TDM-GCC).
-- Trình mô phỏng Verilog: `iverilog` (Icarus Verilog) và `vvp`.
-- Môi trường Python: Python 3.8+ với các thư viện `numpy`, `matplotlib`.
-- Trình xem dạng sóng (tùy chọn): `GTKWave`.
+---
 
-### Lệnh thực thi:
-1. **Chạy toàn bộ quy trình tự động qua script Python:**
-   ```bash
-   cd demo
-   python run_demo.py
-   ```
-2. **Hoặc nhấp đúp chuột vào file batch trên Windows:**
-   ```cmd
-   demo\run_demo.bat
-   ```
+## 📊 3. Bảng Tổng Hợp Kiểm Chứng Chéo (E5)
 
-Quy trình sẽ tự động thực hiện 4 bước liên hoàn:
-- `[Bước 1/4]` Biên dịch mã nguồn C và đo chu kỳ thực thi trên MCU (`fir_mcu.exe`).
-- `[Bước 2/4]` Tổng hợp và mô phỏng chu kỳ xung nhịp Verilog RTL (`iverilog` $\rightarrow$ `vvp`), xuất file dạng sóng `fir_simulation.vcd`.
-- `[Bước 3/4]` Chạy mô phỏng truyền gói dữ liệu qua AXI4-Stream DMA trên Heterogeneous SoC Zynq.
-- `[Bước 4/4]` Xuất toàn bộ 6 biểu đồ chất lượng cao 300 DPI vào thư mục `demo/outputs/charts/`.
+File [`experiments/results/E5_crosscheck.md`](experiments/results/E5_crosscheck.md) và [`experiments/results/numbers.tex`](experiments/results/numbers.tex) được sinh tự động hoàn toàn từ `python experiments/e5_crosscheck/collect.py`:
+
+| Câu hỏi kiểm chứng | Kết quả nhóm đo / tổng hợp | Số liệu trong tài liệu | Kết luận kỹ thuật |
+| :--- | :--- | :--- | :--- |
+| **Hiệu suất thực tế của MCU so với giả thiết "1 MAC/chu kỳ"** | **216,3 chu kỳ/mẫu** (`c_circular_unrolled`) $\rightarrow$ đạt **7%** mức lý thuyết | `PLAN.md` `[tính]`: giả định 1 MAC/chu kỳ | Chi phí nạp toán hạng, cập nhật trễ và `2 Flash wait states` khiến con số lý thuyết chỉ là cận trên lạc quan |
+| **Tương quan FPGA vs. MCU trên cùng bài FIR 16-tap** | **Thông lượng gấp 375×** (`125,0` vs `0,33 MSPS`); **độ trễ nhanh hơn 53,6×** (`56 ns` vs `3 004 ns`) | Kiến trúc song song không gian vs. tuần tự | FPGA giữ nguyên 1 mẫu/chu kỳ khi tăng số tap, còn MCU chậm đi tuyến tính theo số tap |
+| **Độ trễ ngắt MCU bare-metal** | **264 ns** (rảnh) · **0–347 ns** (tải FIR) | AC6 `[nguồn]`: $1\text{–}3\ \mu\text{s}$ | Phần cứng Cortex-M3 phản hồi cực nhanh dưới $0{,}35\ \mu\text{s}$ |
+| **MCU khi có ngắt ưu tiên cao hơn chiếm 20 µs** | Xấu nhất **21,88 µs** (1 575 chu kỳ) | — | **Worst-case của MCU do kiến trúc phần mềm quyết định**, không phải do phần cứng |
+| **Tài nguyên FPGA ở chế độ thuần LUT (0 DSP)** | **0/220 DSP (0%)**, **1 672/53 200 LUT (3,14%)**, **1 046/106 400 FF (0,98%)** | $F_{\max} \approx 134{,}6\text{ MHz}$, công suất **0,124 W** | Chỉ dùng ~3,1% LUT của XC7Z020 đã đạt 125 MSPS, dành trọn 220 DSP48E1 cho các tác vụ khác |
+
+---
+
+## 📄 4. Báo Cáo Học Thuật & Slide Thuyết Trình (`report/`)
+
+Toàn bộ số liệu từ `experiments/results/numbers.tex` và biểu đồ trong `experiments/results/charts/` được nhúng tự động vào hệ thống tài liệu XeLaTeX:
+
+1. **Báo cáo chuyên đề (12 trang A4):** [`report/report.pdf`](report/report.pdf) (mã nguồn [`report/report.tex`](report/report.tex)).
+2. **Slide thuyết trình chuẩn HCMUT (23 trang 16:9):** [`report/slides_hcmut.pdf`](report/slides_hcmut.pdf) (mã nguồn [`report/slides_hcmut.tex`](report/slides_hcmut.tex)).
+3. **Slide thuyết trình bản tối giản (23 trang 16:9):** [`report/slides.pdf`](report/slides.pdf) (mã nguồn [`report/slides.tex`](report/slides.tex)).
+
+---
+
+## 🚀 5. Hướng Dẫn Chạy Lại Thực Nghiệm & Biên Dịch Báo Cáo
+
+### A. Chạy bộ thực nghiệm phần cứng (`experiments/`)
+```bash
+# 1. Sinh lại vector kiểm thử & golden model (E0)
+python experiments/e0_golden/gen_vectors.py
+
+# 2. Build, nạp firmware STM32F103C6 qua ST-Link V2 và trích xuất kết quả từ SRAM qua SWD (E1)
+pio run -d experiments/e1_mcu -e f103c6 -t upload
+python experiments/tools/capture_serial.py mcu swd
+
+# 3. Tổng hợp Vivado (thuần LUT, 0 DSP), nạp bitstream lên Arty Z7-20 và đọc kết quả qua JTAG (E2)
+vivado -mode batch -source experiments/e2_fpga/vivado/build.tcl
+vivado -mode batch -source experiments/e2_fpga/vivado/program.tcl
+
+# 4. Cập nhật bảng kiểm chứng chéo E5, biểu đồ và macro số liệu LaTeX (E5)
+python experiments/e5_crosscheck/collect.py
+```
+
+### B. Biên dịch Báo cáo và Slide (`report/`)
+```bash
+cd report
+xelatex -interaction=nonstopmode report.tex
+xelatex -interaction=nonstopmode slides.tex
+xelatex -interaction=nonstopmode slides_hcmut.tex
+```
 
 ---
 
 ## 📂 6. Cấu Trúc Thư Mục Dự Án
 
-```
+```text
 CO3053-FPGA-MCU-SoC-Tradeoffs/
-├── .gitignore                          # Quy tắc loại trừ tệp tin biên dịch và cấu hình cục bộ
-├── README.md                           # Báo cáo tổng quan dự án và cẩm nang kỹ thuật
-└── demo/                               # Thư mục bộ thực nghiệm đối sánh định lượng
-    ├── DEMO_PRESENTATION_GUIDE.md      # Cẩm nang thuyết trình phần demo 90 giây
-    ├── run_demo.bat                    # Script 1-click chạy demo trên Windows
-    ├── run_demo.py                     # Bộ điều phối tự động 4 bước thực nghiệm
-    ├── fpga_rtl/                       # Mã nguồn thiết kế phần cứng FPGA
-    │   ├── fir_filter_16tap.v          # Module phần cứng Verilog FIR 16-tap 5 tầng pipeline
-    │   ├── tb_fir_filter.v             # Testbench kiểm thử chu kỳ và xuất dạng sóng VCD
-    │   └── fir_simulation.vcd          # File dạng sóng xung nhịp mở trên GTKWave
-    ├── mcu_firmware/                   # Mã nguồn phần mềm vi điều khiển
-    │   ├── fir_mcu.c                   # Thuật toán FIR C đo đạc chu kỳ CPU và kiểm chứng bit-accurate
-    │   └── mcu_benchmark.json          # Số liệu đo đạc hiệu năng trên MCU
-    ├── soc_emulation/                  # Mô phỏng Heterogeneous SoC
-    │   ├── soc_axi_dma_sim.py          # Mô phỏng đường truyền AXI4-Stream DMA (PS-PL)
-    │   └── soc_benchmark.json          # Số liệu tăng tốc và giải phóng CPU theo kích thước gói
-    ├── visualization/                  # Script đồ họa trực quan hóa
-    │   └── plot_benchmark_results.py   # Script vẽ 6 biểu đồ khoa học chuẩn IEEE 300 DPI
-    └── outputs/                        # Thư mục kết quả đầu ra
-        ├── fir_simulation.vcd          # File dạng sóng phục vụ trình diễn
-        ├── mcu_benchmark.json          # Báo cáo JSON MCU
-        ├── soc_benchmark.json          # Báo cáo JSON SoC DMA
-        └── charts/                     # Bộ 6 hình ảnh biểu đồ định dạng PNG 300 DPI
-            ├── chart1_throughput_comparison.png
-            ├── chart2_latency_and_jitter.png
-            ├── chart3_energy_efficiency.png
-            ├── chart4_breakeven_cost_analysis.png
-            ├── chart5_soc_dma_offload.png
-            └── chart6_fpga_waveform_timing.png
+├── .gitignore                          # Quy tắc loại trừ file tạm, thư mục build (.pio, build, .Xil, LaTeX aux)
+├── README.md                           # Tổng quan dự án, số liệu thực nghiệm phần cứng và hướng dẫn tái lập
+├── PLAN.md                             # Đề cương nghiên cứu, nguồn tài liệu tham khảo và phân tích ứng dụng
+├── PLAN_v2.md                          # Kế hoạch thực nghiệm E0–E5 và quy tắc dán nhãn nguồn gốc số liệu
+├── experiments/                        # Bộ thực nghiệm phần cứng chuẩn hóa (E0–E5)
+│   ├── Makefile                        # Điều phối tự động build, flash, capture và collect
+│   ├── README.md                       # Tài liệu chi tiết từng bài thí nghiệm E0–E5
+│   ├── Flash.md                        # Hướng dẫn nối dây và nạp từng board (STM32F103 & Arty Z7-20)
+│   ├── common/fir/                     # Mã nguồn C FIR 16-tap Q15 và vector kiểm thử dùng chung
+│   ├── e0_golden/gen_vectors.py        # Script sinh hệ số FIR, 1024 vector kiểm thử và golden model
+│   ├── e1_mcu/                         # Firmware bare-metal CMSIS cho STM32F103 (Cortex-M3 @ 72 MHz)
+│   │   ├── platformio.ini              # Cấu hình PlatformIO (env:f103c6 và env:f103)
+│   │   └── src/main.c                  # Đo thông lượng 4 biến thể FIR (DWT) & độ trễ ngắt TIM2/TIM3
+│   ├── e2_fpga/                        # Thiết kế RTL & kịch bản Vivado cho Digilent Arty Z7-20 (125 MHz)
+│   │   ├── constr/arty_z7_20.xdc       # Ràng buộc chân và xung nhịp 125 MHz (H16) trên xc7z020clg400-1
+│   │   ├── rtl/fir16.v                 # Pipeline FIR 7 tầng thuần LUT (use_dsp = "no", 0 DSP48E1)
+│   │   ├── rtl/top_arty.v              # Mạch tự kiểm 1024 mẫu trên chip + đọc kết quả qua JTAG BSCANE2 / UART
+│   │   ├── tb/                         # Testbench kiểm thử tự động (tb_fir16.v, tb_top_arty.v)
+│   │   └── vivado/                     # Script tổng hợp (build.tcl, -max_dsp 0) và nạp/đọc JTAG (program.tcl)
+│   ├── e3_soc/                         # Benchmark FIR và cyclictest cho SoC Linux (Raspberry Pi 4)
+│   ├── e5_crosscheck/collect.py        # Tự động tổng hợp JSON -> E5_crosscheck.md, numbers.tex & charts
+│   ├── tools/capture_serial.py         # Công cụ thu thập kết quả qua ST-Link SWD hoặc UART
+│   └── results/                        # Dữ liệu thực nghiệm gốc (JSON), bảng kiểm chứng và biểu đồ
+│       ├── e0_spec.json                # Đặc tả bộ lọc FIR 16-tap Q15 và 1024 mẫu chuẩn
+│       ├── e1_mcu.json                 # Số liệu đo vật lý trên STM32F103C6 @ 72 MHz
+│       ├── e2_fpga_sim.json            # Số liệu mô phỏng RTL Icarus Verilog
+│       ├── e2_fpga_impl.json           # Số liệu tổng hợp Vivado 2025.1.1 (0 DSP, 1672 LUT, 1046 FF, 0.124 W)
+│       ├── e2_fpga_board.json          # Số liệu chạy thật trên board Digilent Arty Z7-20 @ 125 MHz
+│       ├── E5_crosscheck.md            # Bảng tổng hợp và kiểm chứng chéo tự động
+│       ├── numbers.tex                 # Macro số liệu tự động nhúng vào báo cáo và slide LaTeX
+│       └── charts/                     # Biểu đồ sinh tự động từ dữ liệu thực nghiệm
+├── report/                             # Báo cáo học thuật và Slide thuyết trình (XeLaTeX)
+│   ├── report.tex / report.pdf         # Báo cáo chuyên đề 12 trang
+│   ├── slides_hcmut.tex / .pdf         # Slide thuyết trình mẫu HCMUT (23 trang)
+│   ├── slides.tex / slides.pdf         # Slide thuyết trình bản tiêu chuẩn (23 trang)
+│   ├── slides_body.tex                 # Nội dung slide dùng chung
+│   ├── ket_qua.tex                     # File cấu hình ghi đè số liệu tùy chọn
+│   └── figs/                           # Hình minh họa phần cứng, biểu đồ tài liệu và nguồn trích dẫn
+└── demo/                               # Bộ mô phỏng ý tưởng ban đầu (lưu trữ tham khảo)
 ```

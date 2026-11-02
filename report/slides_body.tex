@@ -94,7 +94,7 @@ Mọi nền tảng phải khớp \textbf{từng mẫu} với golden model viết
 \toprule
 \MCU  & STM32F103, Cortex-M3 & 4 phiên bản (C, CMSIS-DSP), đếm chu kỳ bằng DWT; độ trễ ngắt trong 3 kịch bản\\
 \SoC  & Raspberry Pi 4 & Cùng mã C, \texttt{-O2} và \texttt{-O3} (NEON); \texttt{cyclictest} khi rảnh và khi có tải\\
-\FPGA & Arty Z7-20 (XC7Z020 PL) & Pipeline 7 tầng; tự so với golden ngay trên chip ở 125 MHz; Vivado cho Fmax và công suất\\
+\FPGA & Arty Z7-20 (XC7Z020 PL) & Pipeline 7 tầng thuần LUT (0 DSP); tự kiểm ngay trên chip ở 125 MHz; Vivado cho Fmax và công suất\\
 \bottomrule
 \end{tabularx}
 \par\medskip
@@ -106,7 +106,7 @@ Mọi nền tảng phải khớp \textbf{từng mẫu} với golden model viết
 \centering\chart[0.92\linewidth]{e5_throughput.png}
 \par\small
 \FPGA: \expFpgaSpc{} mẫu/chu kỳ, \expFpgaMsps{} MSPS \nhan{\expFpgaLabel} \quad
-\MCU: \expMcuBestMsps{} MSPS \nhan{đo} \quad
+\MCU: \expMcuBestMsps{} MSPS \nhan{đo} (\FPGA{} gấp \expRatioFpgaMcu×) \quad
 \SoC: \expPiBestMsps{} MSPS \nhan{đo}
 \end{frame}
 
@@ -126,8 +126,9 @@ Mọi nền tảng phải khớp \textbf{từng mẫu} với golden model viết
 \toprule
 Câu hỏi & Nhóm đo được & Tài liệu nói\\
 \midrule
-MCU đạt được bao nhiêu so với ``1 MAC/chu kỳ''? & \expMcuEff\% & PLAN giả định 100\%\\
-FPGA nhanh hơn CPU Cortex-A bao nhiêu lần? & \expRatioFpgaPi× (so với Pi 4) & ≈27× (so với A9, Arucu \& Iliev)\\
+MCU đạt được bao nhiêu so với ``1 MAC/chu kỳ''? & \expMcuEff\% (\expMcuBestCps{} chu kỳ/mẫu) & PLAN giả định 100\%\\
+FPGA nhanh hơn MCU / CPU bao nhiêu lần? & \expRatioFpgaMcu× (vs MCU); \expRatioFpgaPi× (vs Pi 4) & ≈27× (so với A9, Arucu \& Iliev)\\
+Tài nguyên FPGA cho FIR 16-tap (thuần LUT) & \expFpgaDsp/220 DSP · \expFpgaLut{} LUT · \expFpgaFf{} FF & Fmax ≈ \expFpgaFmax{} MHz, \expFpgaPower{} W \nhan{ước lượng công cụ}\\
 Độ trễ xấu nhất của Linux PREEMPT\_RT & \expLinuxRtMax{} µs & 30–80 µs (AC6)\\
 Độ trễ xấu nhất của Linux thường & \expLinuxStdMax{} µs & vài ms (AC6)\\
 Độ trễ ngắt MCU bare-metal & \expMcuIrqRange{} ns & 1–3 µs (AC6)\\

@@ -10,35 +10,40 @@ make ports     # xem cổng serial đang cắm (cắm board rồi chạy để b
 
 Kết quả của mọi board đều ghi vào `results/`.
 
-## STM32F103 (Blue Pill)
+## STM32F103 (Blue Pill — `STM32F103C6` / `STM32F103C8`)
 
 **Nối dây:**
-- ST-Link V2: nối SWDIO, SWCLK, GND, 3.3V.
-- USB-UART: **PA9 → RX** của adapter, nối chung GND.
+- ST-Link V2: nối 4 dây `SWDIO`, `SWCLK`, `GND`, `3.3V` vào header SWD của Blue Pill.
+- **Cách 1 (Khuyên dùng — không cần USB-UART rời):** Đọc kết quả trực tiếp từ SRAM qua ST-Link SWD:
 
 ```bash
-make mcu MCU_PORT=/dev/ttyUSB0     # build + nạp + đọc kết quả
+make mcu                           # build + nạp ST-Link + tự đọc SRAM qua SWD -> results/e1_mcu.json
 ```
 
-Lệnh trên gộp 3 bước. Có thể chạy riêng từng bước:
+- **Cách 2 (Dùng USB-UART rời nối vào `PA9`):** Nối thêm `PA9 (TX) → RX` của adapter và `GND`:
 
 ```bash
-make mcu-build                     # chỉ build firmware
+make mcu MCU_PORT=/dev/ttyUSB0     # build + nạp + đọc kết quả qua cổng serial
+```
+
+Có thể chạy riêng từng bước:
+
+```bash
+make mcu-build                     # chỉ build firmware (mặc định env:f103c6)
 make mcu-flash                     # build + nạp qua ST-Link
-make mcu-capture MCU_PORT=/dev/ttyUSB0   # đọc kết quả serial -> results/e1_mcu.json
+make mcu-capture                   # tự reset và đọc SRAM qua SWD -> results/e1_mcu.json
 ```
 
-- Khi `mcu-capture` báo đang chờ, **nhấn RESET** trên Blue Pill.
-- Sau khi in kết quả, board tự chuyển qua các pha đo dòng (RUN 20 s → SLEEP 20 s → STANDBY). Ghi số đo vào `results/e1_mcu_power.json`; file mẫu nằm ở `results/templates/`.
+- Sau khi chạy xong 4 biến thể FIR và 3 kịch bản đo độ trễ ngắt (~9 giây), board tự chuyển qua các pha đo dòng (`RUN 20 s` → `SLEEP 20 s` → `STANDBY`). Ghi số đo vào `results/e1_mcu_power.json`; file mẫu nằm ở `results/templates/`.
 
-## Digilent Arty Z7-20 (`xc7z020clg400-1` @ 125 MHz)
+## Digilent Arty Z7-20 (`xc7z020clg400-1` @ 125 MHz, thuần LUT / 0 DSP)
 
 **Nối dây:** cắm một cáp micro-USB vào cổng **PROG/UART (J14)** và bật công tắc nguồn (chọn nguồn USB hoặc jack ngoài).
-- Bitstream chạy trực tiếp trên vùng logic khả trình **Artix-7 PL** ở xung nhịp gốc **125 MHz** (chân `H16`, chu kỳ 8 ns $\rightarrow$ thông lượng 125 MSPS, độ trễ 7 chu kỳ = 56 ns).
+- Bitstream tổng hợp ở chế độ **thuần Soft-Logic (`(* use_dsp = "no" *)`, `-max_dsp 0` $\rightarrow$ 0 khối DSP48E1, 1 672 LUT, 1 046 FF)**, chạy trực tiếp trên vùng logic khả trình **Artix-7 PL** ở xung nhịp gốc **125 MHz** (chân `H16`, chu kỳ 8 ns $\rightarrow$ thông lượng 125 MSPS, độ trễ 7 chu kỳ = 56 ns).
 - Kết quả tự kiểm (`PASS`, `ERR`, `LAT`, `CYC`) được đọc **tự động qua chính cáp USB-JTAG** ngay trong `vivado/program.tcl` (thông qua khối `BSCANE2 USER4`), đồng thời cũng phát ra UART 115200 8N1 tại chân **Pmod `JA[0]` (chân 1 của cổng JA, pin `Y18`)**.
 
 ```bash
-make fpga                          # Vivado build + nạp JTAG + tự đọc kết quả -> results/e2_fpga_board.json
+make fpga                          # Vivado build (0 DSP) + nạp JTAG + tự đọc kết quả -> results/e2_fpga_board.json
 ```
 
 Có thể chạy riêng từng bước:
@@ -93,7 +98,7 @@ make clean     # xóa các thư mục build
 
 ```bash
 make sim
-make mcu  MCU_PORT=/dev/ttyUSB0
+make mcu
 make fpga
 make pi   PI=pi@192.168.1.50
 make collect
