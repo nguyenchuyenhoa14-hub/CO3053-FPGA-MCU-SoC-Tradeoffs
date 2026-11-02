@@ -4,6 +4,7 @@
  "board": "Digilent Arty Z7-20",
  "part": "xc7z020clg400-1",
  "clock_mhz": 125.0,
+ "dsp_mode": "none (LUT-only)",
  "pass": true,
  "num_samples": 1024,
  "mismatches": 0,

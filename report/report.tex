@@ -322,7 +322,7 @@ Phần này chọn những lĩnh vực mà mỗi nền tảng gần như là l�
   \item Ở đây khả năng tái cấu hình chính là mục đích: mỗi lần sửa RTL chỉ cần nạp lại, không phải đúc lại chip.
   \end{itemize}
 \item \emph{Giao dịch tần suất cao:} tick-to-trade 13,9 ns~\cite{stac}.
-\item \emph{Vì sao FPGA đáp ứng:} các phép tính độc lập được chạy song song trong phần cứng (bài 16-tap của nhóm dùng \expFpgaDsp{} DSP, 1 mẫu/chu kỳ). Độ trễ cố định theo chu kỳ. I/O nối trực tiếp vào chân chip.
+\item \emph{Vì sao FPGA đáp ứng:} các phép tính độc lập được chạy song song trong phần cứng (bài 16-tap của nhóm triển khai thuần LUT với \expFpgaDsp{} DSP, 1 mẫu/chu kỳ). Độ trễ cố định theo chu kỳ. I/O nối trực tiếp vào chân chip.
 \item \emph{Vì sao không chọn MCU hay SoC:} MCU thiếu khoảng 3,5 lần năng lực dù đạt hiệu suất 100\%. SoC có thể đủ thông lượng nhờ SIMD hoặc GPU, nhưng mất tính xác định và tốn điện hơn.
 \item \emph{Ưu thế dừng ở đâu:} khi số lượng đủ lớn và thuật toán đã ổn định, ASIC rẻ hơn và tiết kiệm điện hơn; đó là lý do điện thoại dùng ISP và modem cứng chứ không dùng FPGA. Với phép tính dấu phẩy động khối lượng lớn, GPU thường thắng.
 \end{itemize}

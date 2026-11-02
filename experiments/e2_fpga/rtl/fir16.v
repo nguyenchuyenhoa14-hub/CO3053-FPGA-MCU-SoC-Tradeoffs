@@ -1,17 +1,18 @@
 // ============================================================================
-// E2 - FIR 16-tap Q15, pipeline day du, 1 mau / chu ky.
+// E2 - FIR 16-tap Q15, pipeline day du, 1 mau / chu ky (LUT-only, NO DSP).
 // Dac ta: y[n] = sat16(floor(sum h[k]*x[n-k] / 2^15))  (giong golden model E0)
 //
 // Pipeline (moi tang 1 chu ky):
 //   S0 thanh ghi duong tre (chi dich khi in_valid)
-//   S1 16 phep nhan song song     (zero tap bi synthesis cat bo)
-//   S2..S5 cay cong 16->8->4->2->1
+//   S1 16 phep nhan song song bang soft-logic LUTs (use_dsp = "no")
+//   S2..S5 cay cong 16->8->4->2->1 bang LUTs + CARRY4
 //   S6 dich 15 bit + bao hoa
 // Do tre = 7 tang thanh ghi (S0..S6) = 7 chu ky (testbench do va xac nhan).
 // ============================================================================
 `timescale 1ns / 1ps
 `default_nettype none
 
+(* use_dsp = "no" *)
 module fir16 (
     input  wire               clk,
     input  wire               rst,        // dong bo, muc cao
@@ -47,16 +48,16 @@ module fir16 (
         end
     end
 
-    // S1: nhan song song
-    (* use_dsp = "yes" *) reg signed [31:0] p [0:N-1];
+    // S1: nhan song song bang Logic LUTs (khong dung DSP48E1)
+    (* use_dsp = "no" *) reg signed [31:0] p [0:N-1];
     always @(posedge clk)
         for (i = 0; i < N; i = i + 1) p[i] <= x_d[i] * coeff(i);
 
-    // S2..S5: cay cong. |acc| <= 32768 * sum|h| < 2^31, dung 34 bit cho an toan
-    reg signed [33:0] s1 [0:7];
-    reg signed [33:0] s2 [0:3];
-    reg signed [33:0] s3 [0:1];
-    reg signed [33:0] s4;
+    // S2..S5: cay cong bang LUTs + CARRY4. |acc| <= 32768 * sum|h| < 2^31, dung 34 bit cho an toan
+    (* use_dsp = "no" *) reg signed [33:0] s1 [0:7];
+    (* use_dsp = "no" *) reg signed [33:0] s2 [0:3];
+    (* use_dsp = "no" *) reg signed [33:0] s3 [0:1];
+    (* use_dsp = "no" *) reg signed [33:0] s4;
     always @(posedge clk) begin
         for (i = 0; i < 8; i = i + 1) s1[i] <= p[2*i] + p[2*i+1];
         for (i = 0; i < 4; i = i + 1) s2[i] <= s1[2*i] + s1[2*i+1];

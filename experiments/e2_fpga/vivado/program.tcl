@@ -16,24 +16,21 @@ if {$dev eq ""} {
 current_hw_device $dev
 set_property PROGRAM.FILE $bit $dev
 program_hw_devices $dev
-puts "Da nap $bit vao $dev (Arty Z7-20 @ 125 MHz)"
+puts "Da nap $bit vao $dev (Arty Z7-20 @ 125 MHz, LUT-only)"
 
 # Cho 50 ms de POR (255 chu ky) + 1024 mau FIR (1031 chu ky = 8.25 us) chay xong
 after 50
 
-# Thu doc ket qua truc tiep qua JTAG USER4 (BSCANE2) de khong can cam day USB-UART roi
+# Thu doc ket qua truc tiep qua JTAG USER4 (BSCANE2)
 if {[catch {
     close_hw_target
     open_hw_target -jtag_mode on
-    # Tren Zynq-7000, chuoi JTAG gom arm_dap (IR=4, BYPASS=0xF) va xc7z020 PL (IR=6, USER4=0x23)
-    # Thu ca 2 thu tu IR (10 bit: 0x3E3 hoac 0x23F) va 6 bit don (0x23)
     set got 0
     foreach {ir_len ir_hex dr_len} {10 23f 97  10 3e3 97  6 23 96} {
         run_state_hw_jtag RESET
         run_state_hw_jtag IDLE
         scan_ir_hw_jtag $ir_len -tdi $ir_hex
         set raw_hex [scan_dr_hw_jtag $dr_len -tdi 0]
-        # Kiem tra magic 14-bit 0x2A55 o dau thanh ghi 96-bit {14'h2A55, pass, done, first_bad, lat, n_err, cyc}
         set v [expr {"0x$raw_hex"}]
         for {set shift 0} {$shift <= 1} {incr shift} {
             set w [expr {$v >> $shift}]
@@ -62,6 +59,7 @@ if {[catch {
                 puts $fd " \"board\": \"Digilent Arty Z7-20\","
                 puts $fd " \"part\": \"xc7z020clg400-1\","
                 puts $fd " \"clock_mhz\": 125.0,"
+                puts $fd " \"dsp_mode\": \"none (LUT-only)\","
                 puts $fd " \"pass\": $pass_json,"
                 puts $fd " \"num_samples\": $n,"
                 puts $fd " \"mismatches\": $err,"
@@ -81,7 +79,9 @@ if {[catch {
         }
         if {$got} { break }
     }
+    catch { close_hw_target }
 } err]} {
+    catch { close_hw_target }
     puts "(Ghi chu: Khong doc qua JTAG raw mode: $err. Co the doc qua UART Pmod JA\[0\] chan Y18 bang capture_serial.py)"
 }
 

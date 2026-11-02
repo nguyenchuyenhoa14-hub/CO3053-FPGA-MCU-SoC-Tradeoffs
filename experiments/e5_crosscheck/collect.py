@@ -150,10 +150,17 @@ def crosscheck(d):
             out.append((f"Độ trễ xấu nhất {r[1]}", f"{r[2] / 1000:.0f} µs", ref, r[4]))
     if d["impl"]:
         o = d["impl"]["fir16_ooc"]
-        out.append(("Tài nguyên DSP cho FIR 16-tap",
-                    f"{o['dsp48e1']}/{o['dsp_available']} DSP48E1 ({o['dsp48e1'] / o['dsp_available'] * 100:.1f}%)",
-                    "PLAN.md (tính): bài video cần ≈3,5% năng lực",
-                    "12 nhân (4 tap hệ số 0 bị lược bỏ) + 7 cộng cây 34-bit gộp vào DSP48E1"))
+        dsp_mode = d["impl"].get("dsp_mode", "")
+        if "LUT" in dsp_mode or o["dsp48e1"] == 0:
+            out.append(("Tài nguyên logic cho FIR 16-tap (chế độ thuần LUT, 0 DSP)",
+                        f"0/{o['dsp_available']} DSP48E1 (0%), {o['lut']}/{o['lut_available']} LUTs ({o['lut'] / o['lut_available'] * 100:.1f}%)",
+                        "Kiến trúc soft-logic thuần túy (0 DSP)",
+                        "16 nhân + bộ cộng dạng cây tổng hợp hoàn toàn trên LUT, Fmax ≈ 135 MHz"))
+        else:
+            out.append(("Tài nguyên DSP cho FIR 16-tap",
+                        f"{o['dsp48e1']}/{o['dsp_available']} DSP48E1 ({o['dsp48e1'] / o['dsp_available'] * 100:.1f}%)",
+                        "PLAN.md (tính): bài video cần ≈3,5% năng lực",
+                        "12 nhân (4 tap hệ số 0 bị lược bỏ) + 7 cộng cây 34-bit gộp vào DSP48E1"))
     return out
 
 
