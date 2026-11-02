@@ -1,0 +1,63 @@
+% ============================================================================
+% Slide De tai 09 theo template HCMUT. Bien dich: xelatex slides_hcmut.tex (2 lan)
+%
+% Giao dien dua tren "HCMUT-Slide" cua Nguyen Quang Duc (Overleaf, CC BY 4.0):
+%   https://www.overleaf.com/latex/templates/hcmut-slide/ctvgrqqgjjzn
+% Anh nen va logo trong hcmut/ duoc trich tu PDF mau cua template do.
+% Noi dung: slides_body.tex (dung chung voi slides.tex)
+% ============================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+\input{shared.tex}
+\setsansfont{Noto Sans}
+\setmainfont{Noto Sans}
+
+\usetheme{Madrid}
+\usefonttheme{structurebold}
+\usefonttheme[onlymath]{serif}
+\definecolor{BKTemplate}{rgb}{0.11765, 0.30588, 0.47451}
+\usecolortheme[named=BKTemplate]{structure}
+\setbeamercolor{title}{fg=BKTemplate,bg=}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}{\textbullet}
+\setbeamersize{text margin left=1.1cm,text margin right=1.1cm}
+\newcommand{\hcmuttemplate}{}
+% Thanh tieu de nen xanh dam: ten nen tang hien mau trang de doc duoc
+\addtobeamertemplate{frametitle}{%
+  \renewcommand{\MCU}{\textbf{MCU}}\renewcommand{\SoC}{\textbf{SoC}}\renewcommand{\FPGA}{\textbf{FPGA}}}{}
+\usepackage{tikz}
+\input{slides_common.tex}
+
+% ---- Trang bia: DIEN TEN NHOM / GVHD truoc khi nop ----
+\title[MCU – SoC – FPGA]{\textbf{MCU – SoC – FPGA}}
+\subtitle{Đánh đổi giữa hiệu năng, chi phí và độ linh hoạt}
+\author[Nhóm \ldots{} · Đề tài 09]{%
+  GVHD: \ldots\\
+  Nhóm: \ldots{} (điền họ tên – MSSV)}
+\institute[HCMUT]{%
+  Môn CO3053 Hệ thống nhúng · HK261\\
+  Trường Đại học Bách khoa – ĐHQG-HCM}
+\date[11/2026]{Tháng 11/2026}
+
+\begin{document}
+
+% Trang bia: nen rieng + logo
+\setbeamertemplate{background canvas}{%
+  \includegraphics[width=\paperwidth,height=\paperheight]{hcmut/front_bg.jpg}}
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north east] at ([xshift=-0.6cm,yshift=-0.35cm]current page.north east)
+      {\includegraphics[height=1.0cm]{hcmut/logo_b.png}\hspace{0.25cm}\includegraphics[height=1.0cm]{hcmut/logo_a.png}};
+    \node[anchor=south] at ([yshift=0.35cm]current page.south)
+      {\includegraphics[width=0.55\paperwidth]{hcmut/logo_c.png}};
+  \end{tikzpicture}
+  \vspace{0.8cm}
+  \titlepage
+\end{frame}
+
+% Cac trang con lai: nen noi dung
+\setbeamertemplate{background canvas}{%
+  \includegraphics[width=\paperwidth,height=\paperheight]{hcmut/content_bg.jpg}}
+
+\input{slides_body.tex}
+
+\end{document}

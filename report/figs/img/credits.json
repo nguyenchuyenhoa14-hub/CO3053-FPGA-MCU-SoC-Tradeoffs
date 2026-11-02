@@ -1,0 +1,83 @@
+{
+ "mcu_stm32f103": {
+  "file": "mcu_stm32f103.jpg",
+  "title": "Core Learning Board module Arduino STM32 F103 C8T6.jpg",
+  "author": "Popolon",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Core_Learning_Board_module_Arduino_STM32_F103_C8T6.jpg",
+  "description": "Arduino compatible development board nicknamed Blue Pill[1], based on a STMicroelectronics STM32 F103 C8T6 (F1 series) SoC (ARM Cortex-M3). This kind od card cost about 2€ by unit at summer 2018. In y"
+ },
+ "soc_rpi4": {
+  "file": "soc_rpi4.jpg",
+  "title": "Raspberry Pi 4 Model B - Top.jpg",
+  "author": "Laserlicht",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Raspberry_Pi_4_Model_B_-_Top.jpg",
+  "description": "Raspberry Pi 4 Model B von Oben."
+ },
+ "fpga_artix7": {
+  "file": "fpga_artix7.jpg",
+  "title": "Xilinx Artix7 XC7A100T FGG484 on PCB.jpg",
+  "author": "S03311251",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Xilinx_Artix7_XC7A100T_FGG484_on_PCB.jpg",
+  "description": "A Xilinx Artix-7 FPGA (XC7A100T-FGG484) on a PCB assembly"
+ },
+ "fpga_cell": {
+  "file": "fpga_cell.png",
+  "title": "FPGA cell example.png",
+  "author": "Petter.kallstrom",
+  "license": "Public domain",
+  "license_url": "",
+  "page": "https://commons.wikimedia.org/wiki/File:FPGA_cell_example.png",
+  "description": "An example of how an FPGA logic cell can look like, incl a 4 inp. LUT (or two 3-LUTs), a Full Adder and a D-type Flip Flop. The 2 muxes to the right have their select signal set during the programming"
+ },
+ "app_ecu": {
+  "file": "app_ecu.jpg",
+  "title": "ECU and wire bundles.JPG",
+  "author": "Snewkirk7953",
+  "license": "CC BY-SA 3.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/3.0",
+  "page": "https://commons.wikimedia.org/wiki/File:ECU_and_wire_bundles.JPG",
+  "description": "The ECU with the three wire bundles (right), the wires separated for the ODB connector (left), ODB connector (front left), and power wires from A/C plug (front center)"
+ },
+ "app_router": {
+  "file": "app_router.jpg",
+  "title": "Intel FWIXP422BB on mainboard of UMTS Router Surf@home II, o2-8338.jpg",
+  "author": "Raimond Spekking",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Intel_FWIXP422BB_on_mainboard_of_UMTS_Router_Surf@home_II,_o2-8338.jpg",
+  "description": "Intel FWIXP422BB (IXP42X Product Line of Network Processors) on mainboard of Surf@home II"
+ },
+ "app_phone_soc": {
+  "file": "app_phone_soc.jpg",
+  "title": "HTC Desire - main board - Qualcomm QSD8250-2.jpg",
+  "author": "Raimond Spekking",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:HTC_Desire_-_main_board_-_Qualcomm_QSD8250-2.jpg",
+  "description": "HTC Desire - main board - Qualcomm QSD8250 - Snapdragon CPU 1GHz Scorpion"
+ },
+ "app_ultrasound": {
+  "file": "app_ultrasound.jpg",
+  "title": "Sonoscape Ultrasound Machine.jpg",
+  "author": "Erereony",
+  "license": "CC BY 4.0",
+  "license_url": "https://creativecommons.org/licenses/by/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Sonoscape_Ultrasound_Machine.jpg",
+  "description": "A sonoscape Ultrasound machine showing registration page, computing keys and probes."
+ },
+ "hybrid_zynq": {
+  "file": "hybrid_zynq.jpg",
+  "title": "Xilinx ZynqUltrascale XCZU4CG on PCB.jpg",
+  "author": "S03311251",
+  "license": "CC BY-SA 4.0",
+  "license_url": "https://creativecommons.org/licenses/by-sa/4.0",
+  "page": "https://commons.wikimedia.org/wiki/File:Xilinx_ZynqUltrascale_XCZU4CG_on_PCB.jpg",
+  "description": "A Xilinx Zynq Ultrascale+ SOC (ZU4CG-2SFVC784) on a PCB assembly"
+ }
+}

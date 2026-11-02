@@ -1,0 +1,44 @@
+% ============================================================================
+% KET QUA DO - DIEN TAY VAO DAY
+% ----------------------------------------------------------------------------
+% Cach dien:  \nhap{Ten}{gia tri}
+%   - De trong {} = chua co so: report/slide hien "chua do" (hoac so tu dong
+%     neu da chay  make -C ../experiments collect).
+%   - Co gia tri = ghi de len moi thu, hien dung chu ban go.
+%   - So thap phan dung dau phay: 85,1   Hang nghin: 2\,100  (hoac 2100)
+%   - Chi go SO, khong go don vi (don vi da co san trong report/slide).
+% Dien xong: make -C report   (hoac xelatex report.tex / slides_hcmut.tex 2 lan)
+% ============================================================================
+
+% ---------------- E1: STM32F103 (Blue Pill) ----------------
+% Lay tu results/e1_mcu.json hoac man hinh serial khi chay  make mcu
+\nhap{McuClock}{}            % xung nhip that (MHz), "clock_mhz"           vd: 72
+\nhap{McuBestVariant}{}      % ten ban nhanh nhat, vd: cmsis\_arm\_fir\_q15  (go \_ thay cho _)
+\nhap{McuBestCps}{}          % chu ky/mau cua ban nhanh nhat, "cycles_per_sample"   vd: 70,5
+\nhap{McuShiftCps}{}         % chu ky/mau cua ban c_shift_loop                       vd: 150,2
+\nhap{McuBestMsps}{}         % thong luong ban nhanh nhat (MSPS) = ksps/1000         vd: 1,02
+\nhap{McuEff}{}              % % so voi 1 MAC/chu ky = 16 / McuBestCps * 100         vd: 23
+\nhap{McuIrqRange}{}         % do tre ngat kich ban fir_load, "min_ns"-"max_ns"      vd: 236--264
+\nhap{McuIrqHogMax}{}        % kich ban co ngat 20 us: max_ns/1000 (us)              vd: 20,6
+
+% ---------------- E2: FPGA Arty A7-100T ----------------
+% Lay tu results/e2_fpga_board.json (make fpga-capture) va e2_fpga_impl.json (Vivado)
+\nhap{FpgaPass}{}            % PASS / FAIL tren board
+\nhap{FpgaLabel}{}           % "đo" neu da chay tren board, "mô phỏng" neu chi mo phong
+\nhap{FpgaSpc}{}             % mau/chu ky, "samples_per_cycle"                       vd: 1,00
+\nhap{FpgaMsps}{}            % thong luong o 100 MHz (MSPS)                          vd: 100,0
+\nhap{FpgaLatCycles}{}       % do tre pipeline (chu ky), "latency_cycles"             vd: 7
+\nhap{FpgaLatNs}{}           % = FpgaLatCycles x 10 ns                               vd: 70
+\nhap{FpgaFmax}{}            % Fmax uoc tinh cua khoi FIR (MHz), "fmax_mhz_est"       vd: 410
+\nhap{FpgaDsp}{}             % so DSP48E1 khoi FIR dung, "dsp48e1"                    vd: 12
+\nhap{FpgaPower}{}           % cong suat ca chip (W), "power_total_w"                 vd: 0,112
+
+% ---------------- E3: Raspberry Pi 4 ----------------
+% Lay tu results/e3_soc_fir_aarch64_O3.json va e3_cyclictest_*.json (make pi)
+\nhap{PiBestMsps}{}          % thong luong FIR tot nhat (MSPS), "msps_median" lon nhat  vd: 60,3
+\nhap{LinuxStdMax}{}         % cyclictest max_us, kernel thuong, CO TAI (us)         vd: 2\,100
+\nhap{LinuxRtMax}{}          % cyclictest max_us, PREEMPT_RT, CO TAI (us)            vd: 75
+
+% ---------------- Ti le (tu tinh tu cac so tren) ----------------
+\nhap{RatioFpgaPi}{}         % FpgaMsps / PiBestMsps                                 vd: 1,7
+\nhap{RatioFpgaMcu}{}        % FpgaMsps / McuBestMsps                                vd: 98
