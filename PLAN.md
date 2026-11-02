@@ -153,6 +153,7 @@ Hạn chế cần nêu khi trình bày:
 - Không tìm thấy benchmark FIR công bố cho MCU Cortex-M trong các nguồn đã dùng; phần MCU dựa trên tính toán lý thuyết.
 - Bài FIR chỉ dùng bộ lọc 27 tap và không nêu số mẫu, công suất CPU/GPU là ước tính của tác giả.
 - Theo `pe3`, kết quả chưa kiểm chứng chéo bằng phép đo hoặc mô phỏng vẫn đáng ngờ; bước tiếp theo là tự đo cùng một bài FIR trên STM32 và trên FPGA.
+  * *Cập nhật 02/11/2026:* Đã hoàn thành đo đạc thực nghiệm thật 100% trên phần cứng (E0–E5): STM32F103C6 @ 72 MHz (`0,33 MSPS`, trễ `3,00 µs`) và Digilent Arty Z7-20 @ 125 MHz (`125,00 MSPS`, trễ `56,0 ns`, thuần LUT / 0 DSP). Chi tiết tại `PLAN_v2.md` và `experiments/README.md`.
 
 ## Nguồn tham khảo
 

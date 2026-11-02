@@ -130,3 +130,18 @@ Mức tối thiểu để thuyết trình được: mục 1, 2, 5 và 7. Lúc đ
 - Nhóm có board STM32, Raspberry Pi hoặc FPGA thật không? Câu trả lời quyết định nhánh của E1, E2 và E3.
 - Có cài được Vivado không, hay chỉ dùng Yosys?
 - Hạn nộp và thời lượng thuyết trình, để chia thời gian cho mục 6.
+
+
+## 9. Trạng thái thực nghiệm thực tế đạt được (Tính đến 02/11/2026)
+
+- **E0 (Golden Model):** Đã hoàn thành 100% (1024 mẫu, seed 3053, 60 mẫu bão hòa, chuẩn Q15).
+- **E1 (MCU STM32F103C6 @ 72 MHz — ĐÃ ĐO THẬT TRÊN BOARD):**
+  - Đã nạp firmware qua ST-Link V2 và đo thực nghiệm bằng `DWT->CYCCNT` và `TIM2` (10 kHz, 20 000 mẫu/kịch bản).
+  - Bản `c_circular_unrolled` đạt **216,26 chu kỳ/mẫu** (**332,93 kS/s**, **3 003,66 ns/mẫu**, đạt 7% mức lý thuyết 1 MAC/chu kỳ).
+  - Độ trễ ngắt cứng: **263,89 ns** (rảnh), **0–347,22 ns** (tải FIR); khi có ngắt ưu tiên cao hơn 20 µs: xấu nhất **21,88 µs** (1 575 chu kỳ).
+- **E2 (FPGA Digilent Arty Z7-20 @ 125 MHz, Thuần LUT / 0 DSP — ĐÃ ĐO THẬT TRÊN BOARD):**
+  - Đã thiết kế pipeline 7 tầng thuần soft-logic (`(* use_dsp = "no" *)`, `-max_dsp 0`).
+  - Vivado 2025.1.1: **0/220 DSP48E1 (0%)**, **1 672/53 200 LUT (3,14%)**, **1 046/106 400 FF (0,98%)**, **$F_{\max} \approx 134,6\text{ MHz}$**, `WNS = +0,326 ns`, công suất **0,124 W**.
+  - Đã nạp bitstream lên Arty Z7-20 và tự kiểm qua JTAG `BSCANE2`: **PASS 1024/1024 mẫu (0 lỗi)**, độ trễ **7 chu kỳ = 56,0 ns**, thông lượng **125,00 MSPS** (**gấp 375×** thông lượng và **53,6×** độ trễ so với MCU).
+- **E3 (SoC):** Code đã kiểm chứng trên laptop x86 (`e3_soc_fir_x86_64_*.json`); chờ đo trên Raspberry Pi 4 khi có board.
+- **E5 & Báo cáo:** Bảng kiểm chứng chéo `E5_crosscheck.md`, `numbers.tex` và 3 tài liệu PDF (`report.pdf`, `slides.pdf`, `slides_hcmut.pdf`) đã cập nhật và biên dịch thành công.
