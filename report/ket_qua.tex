@@ -5,7 +5,8 @@
 %   - De trong {} = dung so tu dong trong ../experiments/results/numbers.tex
 %     (sinh boi: python ../experiments/e5_crosscheck/collect.py).
 %   - Co gia tri = ghi de len moi thu, hien dung chu ban go.
-%   - So thap phan dung dau phay: 85,1   Hang nghin: 2\,100  (hoac 2100)
+%   - So thap phan dung dau CHAM: 85.1 (ban tieng Viet tu hien 85,1; ban tieng Anh hien 85.1)
+%   - Khong go dau ngan cach hang nghin: 2100
 %   - Chi go SO, khong go don vi (don vi da co san trong report/slide).
 % Dien xong: make -C report   (hoac xelatex report.tex / slides_hcmut.tex 2 lan)
 % ============================================================================
@@ -14,33 +15,36 @@
 % Lay tu results/e1_mcu.json (make mcu)
 \nhap{McuClock}{}            % xung nhip that (MHz), "clock_mhz"                     da do: 72
 \nhap{McuBestVariant}{}      % ten ban nhanh nhat (go \_ thay cho _)                 da do: c\_circular\_unrolled
-\nhap{McuBestCps}{}          % chu ky/mau cua ban nhanh nhat, "cycles_per_sample"    da do: 216,3
-\nhap{McuShiftCps}{}         % chu ky/mau cua ban c_shift_loop                       da do: 439,6
-\nhap{McuBestMsps}{}         % thong luong ban nhanh nhat (MSPS) = ksps/1000         da do: 0,33
+\nhap{McuBestCps}{}          % chu ky/mau cua ban nhanh nhat, "cycles_per_sample"    da do: 216.3
+\nhap{McuShiftCps}{}         % chu ky/mau cua ban c_shift_loop                       da do: 439.6
+\nhap{McuBestMsps}{}         % thong luong ban nhanh nhat (MSPS) = ksps/1000         da do: 0.33
 \nhap{McuEff}{}              % % so voi 1 MAC/chu ky = 16 / McuBestCps * 100         da do: 7
 \nhap{McuIrqRange}{}         % do tre ngat kich ban fir_load, "min_ns"-"max_ns"      da do: 0–347
-\nhap{McuIrqHogMax}{}        % kich ban co ngat 20 us: max_ns/1000 (us)              da do: 21,9
+\nhap{McuIrqHogMax}{}        % kich ban co ngat 20 us: max_ns/1000 (us)              da do: 21.9
 
 % ---------------- E2: FPGA Digilent Arty Z7-20 (XC7Z020 @ 125 MHz, thuan LUT / 0 DSP) ----------------
 % Lay tu results/e2_fpga_board.json (make fpga-flash) va e2_fpga_impl.json (Vivado)
 \nhap{FpgaPass}{}            % PASS / FAIL tren board                                da do: PASS
 \nhap{FpgaLabel}{}           % "đo" neu da chay tren board, "mô phỏng" neu mo phong  da do: đo
-\nhap{FpgaSpc}{}             % mau/chu ky, "samples_per_cycle"                       da do: 1,00
-\nhap{FpgaMsps}{}            % thong luong o 125 MHz (MSPS)                          da do: 125,0
+\nhap{FpgaLabelEn}{}         % ban tieng Anh cho slide EN: "measured" / "simulated"  da do: measured
+\nhap{FpgaSpc}{}             % mau/chu ky, "samples_per_cycle"                       da do: 1.00
+\nhap{FpgaMsps}{}            % thong luong o 125 MHz (MSPS)                          da do: 125.0
 \nhap{FpgaLatCycles}{}       % do tre pipeline (chu ky), "latency_cycles"            da do: 7
 \nhap{FpgaLatNs}{}           % = FpgaLatCycles x 8 ns (o 125 MHz)                    da do: 56
 \nhap{FpgaFmax}{}            % Fmax uoc tinh cua khoi FIR (MHz), "fmax_mhz_est"      Vivado: 135
 \nhap{FpgaDsp}{}             % so DSP48E1 khoi FIR dung (tren 220), "dsp48e1"        Vivado: 0
-\nhap{FpgaLut}{}             % so LUT khoi FIR dung (tren 53 200), "lut"             Vivado: 1\,672
-\nhap{FpgaFf}{}              % so FF khoi FIR dung (tren 106 400), "ff"              Vivado: 1\,046
-\nhap{FpgaPower}{}           % cong suat ca chip (W), "power_total_w"                Vivado: 0,124
+\nhap{FpgaLut}{}             % so LUT khoi FIR dung (tren 53 200), "lut"             Vivado: 1672
+\nhap{FpgaFf}{}              % so FF khoi FIR dung (tren 106 400), "ff"              Vivado: 1046
+\nhap{FpgaPower}{}           % cong suat ca chip (W), "power_total_w"                Vivado: 0.124
 
 % ---------------- E3: Raspberry Pi 4 ----------------
 % Lay tu results/e3_soc_fir_aarch64_O3.json va e3_cyclictest_*.json (make pi)
-\nhap{PiBestMsps}{}          % thong luong FIR tot nhat (MSPS), "msps_median" lon nhat  vd: 60,3
-\nhap{LinuxStdMax}{}         % cyclictest max_us, kernel thuong, CO TAI (us)         vd: 2\,100
+\nhap{PiBestMsps}{}          % thong luong FIR tot nhat (MSPS), "msps_median" lon nhat  vd: 60.3
+\nhap{PiLabel}{}           % "đo" khi da chay tren Pi that, "ước lượng" khi lay tu QEMU
+\nhap{PiLabelEn}{}         % "measured" / "estimate"
+\nhap{LinuxStdMax}{}         % cyclictest max_us, kernel thuong, CO TAI (us)         vd: 2100
 \nhap{LinuxRtMax}{}          % cyclictest max_us, PREEMPT_RT, CO TAI (us)            vd: 75
 
 % ---------------- Ti le (tu tinh tu cac so tren) ----------------
-\nhap{RatioFpgaPi}{}         % FpgaMsps / PiBestMsps                                 vd: 2,1
+\nhap{RatioFpgaPi}{}         % FpgaMsps / PiBestMsps                                 vd: 2.1
 \nhap{RatioFpgaMcu}{}        % FpgaMsps / McuBestMsps                                da do: 375

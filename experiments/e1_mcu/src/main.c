@@ -226,6 +226,7 @@ static void lat_run(int scenario)
     TIM2->CR1 = 0; TIM2->PSC = 0; TIM2->ARR = SystemCoreClock / 10000u - 1u;
     TIM2->EGR = TIM_EGR_UG; TIM2->SR = 0; TIM2->DIER = TIM_DIER_UIE;
     NVIC_SetPriority(TIM2_IRQn, 1);
+    NVIC_ClearPendingIRQ(TIM2_IRQn);   /* xoa ngat treo tu kich ban truoc (gay mau CNT = 0) */
     NVIC_EnableIRQ(TIM2_IRQn);
 
     if (scenario == 2) {
@@ -233,6 +234,7 @@ static void lat_run(int scenario)
         TIM3->CR1 = 0; TIM3->PSC = 1; TIM3->ARR = SystemCoreClock / 2000u + 11u;
         TIM3->EGR = TIM_EGR_UG; TIM3->SR = 0; TIM3->DIER = TIM_DIER_UIE;
         NVIC_SetPriority(TIM3_IRQn, 0);   /* uu tien CAO hon TIM2 */
+        NVIC_ClearPendingIRQ(TIM3_IRQn);
         NVIC_EnableIRQ(TIM3_IRQn);
         TIM3->CR1 = TIM_CR1_CEN;
     }

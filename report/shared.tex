@@ -3,13 +3,19 @@
 % ============================================================================
 \usepackage{fontspec}
 \usepackage{polyglossia}
-\setdefaultlanguage{vietnamese}
-\setotherlanguage{english}
+% Dat \newcommand{\langEN}{} TRUOC \input{shared.tex} de dung tieng Anh (slide EN)
+\ifdefined\langEN
+  \setdefaultlanguage{english}
+\else
+  \setdefaultlanguage{vietnamese}
+  \setotherlanguage{english}
+\fi
 \IfFontExistsTF{DejaVu Sans Mono}{\setmonofont{DejaVu Sans Mono}[Scale=0.85]}{\setmonofont{Consolas}[Scale=0.88]}
 \usepackage{amsmath}
 \usepackage{newunicodechar}
 \newunicodechar{≈}{\ensuremath{\approx}}
 \newunicodechar{−}{\ensuremath{-}}
+\newunicodechar{→}{\ensuremath{\rightarrow}}
 
 \usepackage{xcolor}
 \usepackage{graphicx}
@@ -28,11 +34,24 @@
 % Nhan nguon goc so lieu: \nhan{do}, \nhan{mo phong}, ...
 \newcommand{\nhan}[1]{\textcolor{cInk2}{\footnotesize[#1]}}
 % So chua do: hien ro rang, khong bao gio dien so gia dinh
-\newcommand{\chuado}{\textcolor{cWarn}{\textit{chưa đo}}}
+\ifdefined\langEN
+  \newcommand{\chuado}{\textcolor{cWarn}{\textit{not measured}}}
+  \newcommand{\chuacotext}{not available yet}
+\else
+  \newcommand{\chuado}{\textcolor{cWarn}{\textit{chưa đo}}}
+  \newcommand{\chuacotext}{chưa có}
+\fi
 
 \newcommand{\MCU}{\textcolor{cMCU}{\textbf{MCU}}}
 \newcommand{\SoC}{\textcolor{cSoC}{\textbf{SoC}}}
 \newcommand{\FPGA}{\textcolor{cFPGA}{\textbf{FPGA}}}
+
+% Dau so theo ngon ngu (numbers.tex dung \numdec va \numthou)
+\ifdefined\langEN
+  \newcommand{\numdec}{.}\newcommand{\numthou}{,}
+\else
+  \newcommand{\numdec}{{,}}\newcommand{\numthou}{\,}
+\fi
 
 % So lieu thi nghiem, tu dong sinh boi experiments/e5_crosscheck/collect.py
 \newcommand{\resdir}{../experiments/results}
@@ -42,16 +61,20 @@
 
 % So nhap tay (ket_qua.tex): o nao co gia tri se GHI DE so tu dong o tren.
 % \nhap{Ten}{gia tri}: de trong gia tri -> giu nguyen so tu dong / \chuado.
+% Go so thap phan bang dau CHAM (85.1): tu doi thanh 85,1 o ban tieng Viet.
+\usepackage{xstring}
 \newcommand{\nhap}[2]{%
   \if\relax\detokenize{#2}\relax\else
-    \expandafter\renewcommand\csname exp#1\endcsname{#2}\fi}
+    \begingroup\noexpandarg
+    \StrSubstitute{#2}{.}{\numdec}[\nhaptmp]%
+    \expandafter\endgroup\expandafter\def\csname exp#1\expandafter\endcsname\expandafter{\nhaptmp}\fi}
 \IfFileExists{ket_qua.tex}{\input{ket_qua.tex}}{}
 
 % Chen chart neu da co, neu chua thi hien khung bao "chua co"
 \newcommand{\chart}[2][\linewidth]{%
   \IfFileExists{\resdir/charts/#2}%
     {\includegraphics[width=#1]{\resdir/charts/#2}}%
-    {\fbox{\parbox{0.8\linewidth}{\centering\chuado{}: chưa có \texttt{#2}}}}}
+    {\fbox{\parbox{0.8\linewidth}{\centering\chuado{}: \chuacotext{} \texttt{#2}}}}}
 
 % ---- Hinh anh va plot co ghi nguon ----
 % Anh tu Wikimedia Commons (giay phep mo); plot ve lai tu so lieu da cong bo.

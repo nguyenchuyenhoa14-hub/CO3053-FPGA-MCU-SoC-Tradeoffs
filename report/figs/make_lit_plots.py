@@ -3,9 +3,11 @@
 Ve lai cac bieu do tu SO LIEU DA CONG BO (khong chep hinh cua nguon).
 Moi diem du lieu ghi kem khoa nguon; caption trong LaTeX ghi "Du lieu: ...".
 
-    /usr/bin/python3 figs/make_lit_plots.py      # can matplotlib
+    /usr/bin/python3 figs/make_lit_plots.py            # tieng Viet -> figs/plots/
+    /usr/bin/python3 figs/make_lit_plots.py --lang en  # tieng Anh  -> figs/plots_en/
 """
 import os
+import sys
 
 import matplotlib
 
@@ -13,7 +15,41 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter
 
-OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plots")
+LANG = "en" if "--lang" in sys.argv and sys.argv[sys.argv.index("--lang") + 1] == "en" else "vi"
+OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "plots_en" if LANG == "en" else "plots")
+
+EN = {  # chuoi tieng Viet -> tieng Anh (chi dung khi --lang en)
+    "Raspberry Pi 4 · 4×A72 1,8 GHz": "Raspberry Pi 4 · 4×A72 1.8 GHz",
+    "STM32H743 · 1 MAC/chu kỳ × 480 MHz": "STM32H743 · 1 MAC/cycle × 480 MHz",
+    "XC7A100T · hãng công bố tối đa": "XC7A100T · vendor peak",
+    "tính": "calculated",
+    "Linux PREEMPT_RT đã tinh chỉnh": "Linux PREEMPT_RT, tuned",
+    "Linux thường": "Standard Linux",
+    "“vài ms”": "“a few ms”",
+    "300 nA × 3,3 V": "300 nA × 3.3 V",
+    "2,43 µA × 3,3 V": "2.43 µA × 3.3 V",
+    "Raspberry Pi 4 · rảnh (cả board)": "Raspberry Pi 4 · idle (whole board)",
+    "cả board": "whole board",
+    "1,431 W (đo)": "1.431 W (measured)",
+    "50–100 W (tác giả ước tính)": "50–100 W (authors' estimate)",
+    "5–10 W (tác giả ước tính)": "5–10 W (authors' estimate)",
+    "13,9 ns": "13.9 ns",
+    "CoreMark (càng cao càng nhanh, thang log)": "CoreMark (higher is faster, log scale)",
+    "cần 1,68 G MAC/s (video 1080p, lọc 3×3)": "needed: 1.68 G MAC/s (1080p video, 3×3 filter)",
+    "Thông lượng MAC tối đa (G MAC/s, thang log)": "Peak MAC throughput (G MAC/s, log scale)",
+    "Độ trễ xấu nhất điển hình (thang log)": "Typical worst-case latency (log scale)",
+    "Công suất khi nghỉ (thang log)": "Idle power (log scale)",
+    "Thời gian xử lý FIR 27-tap (ms, càng thấp càng tốt)": "27-tap FIR processing time (ms, lower is better)",
+}
+
+
+def L(text):
+    return EN.get(text, text) if LANG == "en" else text
+
+
+def dec(text):
+    """Dau thap phan: phay cho tieng Viet, cham cho tieng Anh."""
+    return text if LANG == "en" else text.replace(".", ",")
 C = {"MCU": "#2a78d6", "SoC": "#eb6834", "FPGA": "#1baf7a", "GPU": "#8a8984"}
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 
@@ -51,7 +87,7 @@ ARUCU = [  # FIR 27-tap, thoi gian xu ly (s), cong suat
 # ---------------------------------------------------------------- tien ich
 def style(ax, xlabel):
     ax.set_facecolor(SURF)
-    ax.set_xlabel(xlabel, fontsize=9, color=INK2)
+    ax.set_xlabel(L(xlabel), fontsize=9, color=INK2)
     ax.grid(axis="x", color=GRID, linewidth=0.6)
     ax.set_axisbelow(True)
     for s in ("top", "right", "left"):
@@ -78,8 +114,8 @@ def si(v, unit):
     """Doi sang tien to SI, 3 chu so co nghia, dau phay thap phan."""
     for div, p in ((1e-9, "n"), (1e-6, "µ"), (1e-3, "m"), (1, "")):
         if v / div < 999.5:
-            return f"{v / div:.3g} {p}{unit}".replace(".", ",")
-    return f"{v:.3g} {unit}".replace(".", ",")
+            return dec(f"{v / div:.3g} {p}{unit}")
+    return dec(f"{v:.3g} {unit}")
 
 
 def dots(ax, rows, vals, labels, colors):
@@ -91,7 +127,7 @@ def dots(ax, rows, vals, labels, colors):
     for y, v, t in zip(ys, vals, labels):
         ax.annotate(t, (v, y), xytext=(7, 0), textcoords="offset points", va="center", fontsize=8, color=INK2)
     ax.set_yticks(list(ys))
-    ax.set_yticklabels([r[1] for r in rows], fontsize=8, color=INK)
+    ax.set_yticklabels([L(r[1]) for r in rows], fontsize=8, color=INK)
     ax.set_xscale("log")
     ax.set_xlim(lo, max(vals) * 8)
 
@@ -99,22 +135,22 @@ def dots(ax, rows, vals, labels, colors):
 # ---------------------------------------------------------------- bieu do
 def coremark():
     f, ax = fig(2.3)
-    dots(ax, COREMARK, [r[2] for r in COREMARK], [f"{r[2]:,}".replace(",", " ") for r in COREMARK],
+    dots(ax, COREMARK, [r[2] for r in COREMARK], [f"{r[2]:,}".replace(",", " " if LANG == "vi" else ",") for r in COREMARK],
          [C[r[0]] for r in COREMARK])
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}".replace(".", ",")))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: dec(f"{v:g}")))
     style(ax, "CoreMark (càng cao càng nhanh, thang log)")
     save(f, "lit_coremark.png")
 
 
 def mac():
     f, ax = fig(2.1)
-    dots(ax, MAC, [r[2] for r in MAC], [f"{r[2]:g} G  [{r[3]}]".replace(".", ",") for r in MAC],
+    dots(ax, MAC, [r[2] for r in MAC], [dec(f"{r[2]:g} G") + f"  [{L(r[3])}]" for r in MAC],
          [C[r[0]] for r in MAC])
     ax.set_xlim(0.1, 264 * 20)
     ax.axvline(MAC_NEED, color=INK, linewidth=1)
-    ax.annotate("cần 1,68 G MAC/s (video 1080p, lọc 3×3)", (MAC_NEED, 0.5),
+    ax.annotate(L("cần 1,68 G MAC/s (video 1080p, lọc 3×3)"), (MAC_NEED, 0.5),
                 xytext=(5, 0), textcoords="offset points", fontsize=7.5, color=INK, va="center")
-    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}".replace(".", ",")))
+    ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: dec(f"{v:g}")))
     style(ax, "Thông lượng MAC tối đa (G MAC/s, thang log)")
     save(f, "lit_mac.png")
 
@@ -124,12 +160,12 @@ def latency():
     ys = range(len(LATENCY))
     for y, (p, _, lo, hi, txt) in zip(ys, LATENCY):
         if hi > lo:
-            ax.hlines(y, lo, hi, color=C[p], linewidth=7, alpha=0.9 if "vài" not in txt else 0.45, zorder=3)
+            ax.hlines(y, lo, hi, color=C[p], linewidth=7, alpha=0.9 if "ms”" not in txt else 0.45, zorder=3)
         else:
             ax.scatter([lo], [y], s=60, color=C[p], edgecolor=SURF, linewidth=2, zorder=3)
-        ax.annotate(txt, (hi, y), xytext=(8, 0), textcoords="offset points", va="center", fontsize=8, color=INK2)
+        ax.annotate(L(txt), (hi, y), xytext=(8, 0), textcoords="offset points", va="center", fontsize=8, color=INK2)
     ax.set_yticks(list(ys))
-    ax.set_yticklabels([r[1] for r in LATENCY], fontsize=8, color=INK)
+    ax.set_yticklabels([L(r[1]) for r in LATENCY], fontsize=8, color=INK)
     ax.set_xscale("log")
     ax.set_xlim(5e-9, 0.2)
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: si(v, "s")))
@@ -139,7 +175,7 @@ def latency():
 
 def idle():
     f, ax = fig(1.9)
-    dots(ax, IDLE, [r[2] for r in IDLE], [f"{si(r[2], 'W')}  ({r[3]})" for r in IDLE], [C[r[0]] for r in IDLE])
+    dots(ax, IDLE, [r[2] for r in IDLE], [f"{si(r[2], 'W')}  ({L(r[3])})" for r in IDLE], [C[r[0]] for r in IDLE])
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: si(v, "W")))
     style(ax, "Công suất khi nghỉ (thang log)")
     save(f, "lit_idle_power.png")
@@ -150,10 +186,10 @@ def arucu():
     ys = range(len(ARUCU))
     for y, (p, _, t, pw) in zip(ys, ARUCU):
         ax.barh(y, t * 1000, height=0.5, color=C[p], zorder=3)
-        ax.annotate(f"{t * 1000:g} ms · {pw}".replace(".", ","), (t * 1000, y), xytext=(6, 0),
+        ax.annotate(dec(f"{t * 1000:g} ms") + f" · {L(pw)}", (t * 1000, y), xytext=(6, 0),
                     textcoords="offset points", va="center", fontsize=8, color=INK2)
     ax.set_yticks(list(ys))
-    ax.set_yticklabels([r[1] for r in ARUCU], fontsize=8, color=INK)
+    ax.set_yticklabels([L(r[1]) for r in ARUCU], fontsize=8, color=INK)
     ax.set_xlim(0, 0.107 * 1000 * 1.9)
     ax.invert_yaxis()
     style(ax, "Thời gian xử lý FIR 27-tap (ms, càng thấp càng tốt)")

@@ -1,0 +1,57 @@
+{
+ "label": "mo phong",
+ "experiment": "E3_soc_qemu",
+ "simulator": "qemu-aarch64 version 7.2.22 (Debian 1:7.2+dfsg-7+deb12u18+b3) user-mode, -cpu cortex-a72",
+ "target": "ARMv8-A, -mcpu=cortex-a72, static, gcc 12",
+ "note": "QEMU khong mo phong thoi gian cua Cortex-A72: chi dung tinh dung va so lenh/mau. Thong luong trong collect.py la uoc luong tu so lenh/mau va gia dinh IPC.",
+ "builds": [
+  {
+   "opt": "O2",
+   "build_flags": "-O2 -mcpu=cortex-a72 -static -fno-tree-vectorize",
+   "variants": [
+    {
+     "variant": "shift_loop",
+     "correct": true,
+     "mismatches": 0,
+     "first_bad": -1,
+     "insn_per_sample": 133.99,
+     "insn_total_k1": 145799,
+     "insn_total_k2": 283008
+    },
+    {
+     "variant": "circular_unrolled",
+     "correct": true,
+     "mismatches": 0,
+     "first_bad": -1,
+     "insn_per_sample": 67.99,
+     "insn_total_k1": 78206,
+     "insn_total_k2": 147823
+    }
+   ]
+  },
+  {
+   "opt": "O3",
+   "build_flags": "-O3 -mcpu=cortex-a72 -static",
+   "variants": [
+    {
+     "variant": "shift_loop",
+     "correct": true,
+     "mismatches": 0,
+     "first_bad": -1,
+     "insn_per_sample": 74.99,
+     "insn_total_k1": 85381,
+     "insn_total_k2": 162173
+    },
+    {
+     "variant": "circular_unrolled",
+     "correct": true,
+     "mismatches": 0,
+     "first_bad": -1,
+     "insn_per_sample": 67.98,
+     "insn_total_k1": 78206,
+     "insn_total_k2": 147822
+    }
+   ]
+  }
+ ]
+}

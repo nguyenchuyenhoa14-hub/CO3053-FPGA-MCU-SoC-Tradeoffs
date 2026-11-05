@@ -1,6 +1,7 @@
 % ============================================================================
 % Macro dung chung cho cac ban slide (nap sau \usetheme)
 % ============================================================================
+\usepackage{tikz}
 \renewcommand{\arraystretch}{1.25}
 \newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 % Khoi "con so quyet dinh"
@@ -12,3 +13,34 @@
 \renewcommand{\anh}[3][\linewidth]{%
   \includegraphics[width=#1]{figs/#2}\par\nopagebreak[4]%
   {\fontsize{4.5}{5.2}\selectfont\textcolor{cInk2}{#3}}\par}
+% Slide ngan cach tung phan: \phan{so}{ten}{phu de}{mau}
+\newcommand{\phan}[4]{%
+  \section{#2}%
+  \begin{frame}[plain,noframenumbering]
+  \vfill\centering
+  {\fontsize{44}{48}\selectfont\bfseries\textcolor{#4}{#1}}\par\medskip
+  {\LARGE\bfseries #2}\par\smallskip
+  {\large\textcolor{cInk2}{#3}}
+  \vfill
+  \end{frame}}
+% Hai cot diem manh / diem yeu
+\ifdefined\langEN
+  \newcommand{\strengthsname}{Strengths}\newcommand{\weaknessname}{Weaknesses}
+\else
+  \newcommand{\strengthsname}{Điểm mạnh}\newcommand{\weaknessname}{Điểm yếu}
+\fi
+\newcommand{\manhyeu}[3]{%
+  \begin{columns}[T]
+  \begin{column}{0.49\linewidth}
+  {\large\bfseries\textcolor{#1}{\strengthsname}}\par\smallskip\footnotesize
+  \begin{itemize}\setlength{\itemsep}{2pt}#2\end{itemize}
+  \end{column}
+  \begin{column}{0.49\linewidth}
+  {\large\bfseries\textcolor{cWarn}{\weaknessname}}\par\smallskip\footnotesize
+  \begin{itemize}\setlength{\itemsep}{2pt}#3\end{itemize}
+  \end{column}
+  \end{columns}}
+% Style TikZ cho so do "Why FIR exposes the architecture" (phai o preamble: frame khong cho dung #1)
+\tikzset{box/.style={draw=#1,fill=#1!10,rounded corners=2pt,minimum height=0.5cm,align=center,inner sep=2pt},
+         mul/.style={circle,draw=cFPGA,fill=cFPGA!15,inner sep=0pt,minimum size=0.26cm}}
+% (firbox)

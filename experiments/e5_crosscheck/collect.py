@@ -36,6 +36,38 @@ def fmt(v, nd=2):
 
 
 # ---------------------------------------------------------------- gom so lieu
+PI_CLOCK_MHZ = 1800.0   # Raspberry Pi 4, Cortex-A72
+IRQ_FLOOR_CYCLES = 12   # Cortex-M3 can toi thieu 12 chu ky de vao ISR (ARM Cortex-M3 TRM / Arm blog)
+
+
+def clean_irq(mcu):
+    """Loai mau do tre ngat thap hon muc san phan cung (12 chu ky).
+
+    Ban firmware dau tien de lai co pending cua TIM2 tu kich ban truoc, nen ngay khi bat lai ngat
+    co 1 lan ISR chay voi CNT = 0. Mau do nam trong o histogram 0-3 chu ky. Min hop le lay tu o
+    histogram thap nhat >= 12 chu ky; neu min cua kich ban CPU ranh nam trong o do thi dung gia tri do.
+    """
+    mhz = mcu["clock_mhz"]
+    idle = next((r for r in mcu["irq_latency"] if r["scenario"] == "idle_loop"), None)
+    for r in mcu["irq_latency"]:
+        if r["min_cycles"] >= IRQ_FLOOR_CYCLES:
+            continue
+        hist = {int(k): v for k, v in r["hist_bucket4"].items()}
+        bad = sum(v for k, v in hist.items() if k + 3 < IRQ_FLOOR_CYCLES)
+        valid = sorted(k for k, v in hist.items() if k >= IRQ_FLOOR_CYCLES and v)
+        if not valid:
+            continue
+        lo = valid[0]
+        if idle and lo <= idle["min_cycles"] <= lo + 3:
+            lo = idle["min_cycles"]
+        r["raw_min_cycles"] = r["min_cycles"]
+        r["min_cycles"] = lo
+        r["min_ns"] = round(lo * 1000.0 / mhz, 2)
+        r["excluded_samples"] = bad
+        r["excluded_reason"] = "dưới mức sàn 12 chu kỳ của Cortex-M3 (cờ pending sót từ kịch bản trước)"
+    return mcu
+
+
 def gather(include_x86):
     spec = load("e0_spec.json")
     taps = spec["num_taps"] if spec else 16
@@ -45,6 +77,7 @@ def gather(include_x86):
 
     mcu = load("e1_mcu.json")
     if mcu:
+        clean_irq(mcu)
         for v in mcu["variants"]:
             rows_tp.append(("MCU", f"STM32F103 {mcu['clock_mhz']} MHz · {v['variant']}",
                             v["ksps"] / 1000.0, "đo", "đúng" if v["correct"] else "SAI"))
@@ -62,11 +95,31 @@ def gather(include_x86):
             rows_tp.append((plat, f"{'Pi 4' if is_pi else 'laptop'} · {v['variant']} · {d.get('build_flags', '')}",
                             v["msps_median"], "đo", "đúng" if v["correct"] else "SAI"))
 
+    # SoC chua co so do tren Pi: dung mo phong QEMU (e3_soc/sim/run_qemu.sh).
+    # QEMU cho tinh dung + so lenh/mau; thong luong = 1,8 GHz x IPC / so lenh, IPC gia dinh 1-3.
+    soc_sim = load("e3_soc_sim.json")
+    soc_est = None
+    if soc_sim and not any(r[0] == "SoC" for r in rows_tp):
+        cands = [(v, b["opt"]) for b in soc_sim["builds"] for v in b["variants"] if v["correct"]]
+        if cands:
+            v, opt = min(cands, key=lambda c: c[0]["insn_per_sample"])
+            ips = v["insn_per_sample"]
+            lo, mid, hi = (PI_CLOCK_MHZ * ipc / ips for ipc in (1.0, 2.0, 3.0))
+            soc_est = dict(variant=v["variant"], opt=opt, insn=ips, lo=lo, mid=mid, hi=hi,
+                           all_correct=all(v["correct"] for b in soc_sim["builds"] for v in b["variants"]))
+            rows_tp.append(("SoC", f"Pi 4 A72 · {v['variant']} · -{opt} · QEMU {ips:.0f} lệnh/mẫu, IPC 2 "
+                                   f"(1–3: {lo:.0f}–{hi:.0f})", mid, "ước lượng", "đúng (QEMU)"))
+
     for f in sorted(glob.glob(os.path.join(RES, "e3_cyclictest_*.json"))):
         d = json.load(open(f, encoding="utf-8"))
         kern = "PREEMPT_RT" if d["kernel"] == "rt" else "Linux thường"
         rows_lat.append(("SoC", f"Pi 4 · {kern} · {'có tải' if d['load'] == 'load' else 'rảnh'}",
                          d["max_us"] * 1000.0, "đo", "độ trễ lập lịch (cyclictest)"))
+
+    if not any(r[0] == "SoC" for r in rows_lat):
+        # Chua do cyclictest tren Pi: dua so cua AC6 vao chart, gan nhan "nguon"
+        rows_lat.append(("SoC", "Linux PREEMPT_RT · tài liệu AC6 (cận trên)", 80e3, "nguồn",
+                         "độ trễ lập lịch, Cortex-A đã tinh chỉnh"))
 
     sim = load("e2_fpga_sim.json")
     board = load("e2_fpga_board.json")
@@ -106,7 +159,7 @@ def gather(include_x86):
         rows_en.append(("FPGA", "XC7Z020 cả chip @125 MHz", p_w, p_w / (spc * 125e6) * 1e9,
                         "ước lượng công cụ", "Vivado vector-less, gồm static"))
 
-    return dict(spec=spec, taps=taps, mcu=mcu, sim=sim, board=board, impl=impl,
+    return dict(spec=spec, taps=taps, mcu=mcu, sim=sim, board=board, impl=impl, soc_est=soc_est,
                 tp=rows_tp, lat=rows_lat, en=rows_en)
 
 
@@ -129,7 +182,9 @@ def crosscheck(d):
             out.append(("Độ trễ ngắt MCU bare-metal",
                         f"{r['min_ns']:.0f}–{r['max_ns']:.0f} ns (có tải FIR)",
                         "AC6 (nguồn): 1–3 µs",
-                        "Đo từ sự kiện timer đến lệnh đầu tiên của ISR"))
+                        "Đo từ sự kiện timer đến lệnh đầu tiên của ISR"
+                        + (f"; đã loại {r['excluded_samples']} mẫu dưới 12 chu kỳ (cờ pending sót lại)"
+                           if r.get("excluded_samples") else "")))
         if "fir_load_plus_higher_prio_isr_20us" in lat:
             r = lat["fir_load_plus_higher_prio_isr_20us"]
             out.append(("MCU khi có ngắt ưu tiên cao hơn chạy 20 µs",
@@ -149,13 +204,21 @@ def crosscheck(d):
                     f"độ trễ nhanh hơn {mcu_ns / fpga_lat_ns:.1f}× ({fpga_lat_ns:.0f} vs {mcu_ns:.0f} ns)",
                     "Kiến trúc song song không gian (1 mẫu/chu kỳ) vs tuần tự Cortex-M3",
                     "FPGA giữ nguyên 1 mẫu/chu kỳ khi tăng số tap, còn MCU tăng tuyến tính theo số tap"))
+    se = d.get("soc_est")
+    if se:
+        out.append(("SoC: FIR có chạy đúng trên tập lệnh ARMv8 (Cortex-A72)?",
+                    f"{'Đúng 100%' if se['all_correct'] else 'CÓ SAI'} ở cả 4 bản build (-O2/-O3 × 2 phiên bản), "
+                    f"bản ít lệnh nhất {se['insn']:.0f} lệnh/mẫu",
+                    "—", "Mô phỏng QEMU user-mode; QEMU không mô phỏng thời gian"))
     if pi_best and fpga_meas:
         out.append(("Tỉ lệ thông lượng FPGA / CPU Cortex-A",
-                    f"{fpga_meas[2] / pi_best:.1f}× (FPGA 125 MHz, {fpga_meas[3]}) so với Pi 4 tốt nhất",
+                    f"{fpga_meas[2] / pi_best:.1f}× (FPGA 125 MHz, {fpga_meas[3]}) so với Pi 4 "
+                    + ("tốt nhất (đo)" if not se else f"ước lượng {pi_best:.0f} MSPS (IPC 2; IPC 1–3: "
+                                                      f"{fpga_meas[2] / se['hi']:.1f}–{fpga_meas[2] / se['lo']:.1f}×)"),
                     "Arucu & Iliev (nguồn): ≈27× so với Cortex-A9",
                     "Khác: chip CPU, số tap, cách đo"))
     for r in d["lat"]:
-        if r[0] == "SoC":
+        if r[0] == "SoC" and r[3] == "đo":
             ref = "AC6 (nguồn): 30–80 µs" if "RT" in r[1] else "AC6 (nguồn): vài ms"
             out.append((f"Độ trễ xấu nhất {r[1]}", f"{r[2] / 1000:.0f} µs", ref, r[4]))
     if d["impl"]:
@@ -206,8 +269,24 @@ def write_md(d, xc):
 COLORS = {"MCU": "#2a78d6", "SoC": "#eb6834", "FPGA": "#1baf7a", "x86 (tham chiếu)": "#8a8984"}
 INK, INK2, GRID, SURF = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
 
+# Ban tieng Anh cua chart (slide tieng Anh): thay chuoi con trong nhan
+EN_TERMS = [
+    ("x86 (tham chiếu)", "x86 (reference)"), ("trên board", "on board"), ("giả định clock", "assumed clock"),
+    ("ngắt TIM2", "TIM2 IRQ"), ("Linux thường", "standard Linux"), ("có tải", "loaded"), ("rảnh", "idle"),
+    ("cả board khi chạy FIR", "whole board running FIR"), ("khi chạy FIR", "running FIR"),
+    ("cả chip", "whole chip"), ("lệnh/mẫu", "instr/sample"), ("tài liệu AC6 (cận trên)", "AC6 literature (upper end)"), ("ước lượng công cụ", "tool estimate"), ("mô phỏng", "simulated"),
+]
+EN_TAGS = {"đo": "measured", "mô phỏng": "simulated", "ước lượng công cụ": "tool estimate", "tính": "calculated",
+           "ước lượng": "estimate", "nguồn": "source"}
 
-def dot_chart(rows, value_idx, label_fn, xlabel, title, subtitle, fname, unit_scale=1.0):
+
+def en(text):
+    for a, b in EN_TERMS:
+        text = text.replace(a, b)
+    return text
+
+
+def dot_chart(rows, value_idx, label_fn, xlabel, title, subtitle, fname, unit_scale=1.0, lang="vi"):
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
@@ -229,7 +308,8 @@ def dot_chart(rows, value_idx, label_fn, xlabel, title, subtitle, fname, unit_sc
                     va="center", fontsize=8, color=INK2)
     ax.set_xscale("log")
     ax.set_yticks(list(ys))
-    ax.set_yticklabels([f"{r[0]} · {r[1]}" for r in rows], fontsize=8, color=INK)
+    tr = en if lang == "en" else (lambda t: t)
+    ax.set_yticklabels([tr(f"{r[0]} · {r[1]}") for r in rows], fontsize=8, color=INK)
     ax.set_xlim(min(vals) / 3, max(vals) * 60)   # cho nhan ben phai
     ax.set_xlabel(xlabel, fontsize=9, color=INK2)
     ax.grid(axis="x", color=GRID, linewidth=0.6)
@@ -242,7 +322,7 @@ def dot_chart(rows, value_idx, label_fn, xlabel, title, subtitle, fname, unit_sc
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
     seen = [p for p in COLORS if any(r[0] == p for r in rows)]   # thu tu co dinh theo nen tang
     handles = [plt.Line2D([], [], marker="o", linestyle="", color=COLORS.get(p, INK2), markersize=8) for p in seen]
-    ax.legend(handles, seen, loc="lower right", frameon=False, fontsize=8, labelcolor=INK2)
+    ax.legend(handles, [tr(p) for p in seen], loc="lower right", frameon=False, fontsize=8, labelcolor=INK2)
     fig.suptitle(title, x=0.01, ha="left", fontsize=12, color=INK, fontweight="bold")
     ax.set_title(subtitle, loc="left", fontsize=8, color=INK2)
     fig.tight_layout()
@@ -253,35 +333,52 @@ def dot_chart(rows, value_idx, label_fn, xlabel, title, subtitle, fname, unit_sc
     return path
 
 
+TXT = {
+    "vi": dict(
+        tp=("Thông lượng (triệu mẫu/giây, thang log)", "Thông lượng FIR 16-tap Q15, cùng vector, cùng golden",
+            "Nhãn trong ngoặc: nguồn gốc số liệu. Chỉ hiện kết quả đã kiểm tra đúng từng mẫu."),
+        lat=("Độ trễ xấu nhất (µs, thang log)", "Độ trễ xấu nhất quan sát được",
+             "MCU: sự kiện timer → lệnh đầu ISR · SoC: độ trễ lập lịch (cyclictest) · FPGA: mẫu vào → mẫu ra. "
+             "Chỉ so bậc độ lớn."),
+        en=("Năng lượng mỗi mẫu (nJ, thang log)", "Năng lượng cho một mẫu FIR",
+            "Công suất MCU/Pi: đo bằng đồng hồ; FPGA: Vivado ước lượng. Không cùng cách đo."),
+        per_sample="nJ/mẫu", suffix=""),
+    "en": dict(
+        tp=("Throughput (million samples/s, log scale)", "16-tap Q15 FIR throughput, same vectors, same golden model",
+            "Bracketed tag: where the number comes from. Only results verified sample by sample are shown."),
+        lat=("Worst-case latency (µs, log scale)", "Observed worst-case latency",
+             "MCU: timer event → first ISR instruction · SoC: scheduling latency (cyclictest) · "
+             "FPGA: sample in → sample out. Compare orders of magnitude only."),
+        en=("Energy per sample (nJ, log scale)", "Energy for one FIR sample",
+            "MCU/Pi power: measured with a meter; FPGA: Vivado estimate. Different methods."),
+        per_sample="nJ/sample", suffix="_en"),
+}
+
+
 def charts(d):
     out = []
-    out.append(dot_chart(
-        d["tp"], 2, lambda r, v: f"{v:,.1f} MSPS  [{r[3]}]".replace(",", " "),
-        "Thông lượng (triệu mẫu/giây, thang log)",
-        "Thông lượng FIR 16-tap Q15, cùng vector, cùng golden",
-        "Nhãn trong ngoặc: nguồn gốc số liệu. Chỉ hiện kết quả đã kiểm tra đúng từng mẫu.",
-        "e5_throughput.png"))
-    out.append(dot_chart(
-        d["lat"], 2, lambda r, v: f"{v:,.2f} µs  [{r[3]}]".replace(",", " "),
-        "Độ trễ xấu nhất (µs, thang log)",
-        "Độ trễ xấu nhất quan sát được",
-        "MCU: sự kiện timer → lệnh đầu ISR · SoC: độ trễ lập lịch (cyclictest) · FPGA: mẫu vào → mẫu ra. Chỉ so bậc độ lớn.",
-        "e5_worst_latency.png", unit_scale=1e-3))
-    if d["en"]:
+    for lang, t in TXT.items():
+        tag = (lambda x: EN_TAGS.get(x, x)) if lang == "en" else (lambda x: x)
+        sep = "," if lang == "en" else " "
         out.append(dot_chart(
-            d["en"], 3, lambda r, v: f"{v:,.2f} nJ/mẫu  [{r[4]}]".replace(",", " "),
-            "Năng lượng mỗi mẫu (nJ, thang log)",
-            "Năng lượng cho một mẫu FIR",
-            "Công suất MCU/Pi: đo bằng đồng hồ; FPGA: Vivado ước lượng. Không cùng cách đo.",
-            "e5_energy.png"))
+            d["tp"], 2, lambda r, v: f"{v:,.1f} MSPS  [{tag(r[3])}]".replace(",", sep), *t["tp"],
+            f"e5_throughput{t['suffix']}.png", lang=lang))
+        out.append(dot_chart(
+            d["lat"], 2, lambda r, v: f"{v:,.2f} µs  [{tag(r[3])}]".replace(",", sep), *t["lat"],
+            f"e5_worst_latency{t['suffix']}.png", unit_scale=1e-3, lang=lang))
+        if d["en"]:
+            out.append(dot_chart(
+                d["en"], 3, lambda r, v: f"{v:,.2f} {t['per_sample']}  [{tag(r[4])}]".replace(",", sep), *t["en"],
+                f"e5_energy{t['suffix']}.png", lang=lang))
     return [p for p in out if p]
 
 
 # ---------------------------------------------------------------- macro LaTeX cho report/slide
 def vn(v, nd=1):
-    """So kieu Viet: dau phay thap phan, khoang hep ngan cach hang nghin."""
+    """So cho LaTeX: dau thap phan \\numdec{} va ngan cach hang nghin \\numthou{} do report/slide
+    dinh nghia theo ngon ngu (VI: 1{,}5 va 2\\,100; EN: 1.5 va 2,100)."""
     s = f"{v:,.{nd}f}"
-    return s.replace(",", "\\,").replace(".", "{,}")
+    return s.replace(",", "\\numthou{}").replace(".", "\\numdec{}")
 
 
 def write_tex(d):
@@ -313,11 +410,20 @@ def write_tex(d):
     pi_best = max((r[2] for r in pi), default=None)
     if pi_best:
         m["PiBestMsps"] = vn(pi_best, 1)
+        measured = any(r[3] == "đo" for r in pi)
+        m["PiLabel"] = "đo" if measured else "ước lượng"
+        m["PiLabelEn"] = "measured" if measured else "estimate"
+    se = d.get("soc_est")
+    if se:
+        m["PiSimRange"] = vn(se["lo"], 0) + "–" + vn(se["hi"], 0)
+        m["PiInsn"] = vn(se["insn"], 0)
+        m["PiSimPass"] = "PASS" if se["all_correct"] else "FAIL"
 
     fpga = next((r for r in d["tp"] if r[0] == "FPGA" and r[3] in ("đo", "mô phỏng")), None)
     if fpga:
         m["FpgaMsps"] = vn(fpga[2], 1)
         m["FpgaLabel"] = fpga[3]
+        m["FpgaLabelEn"] = EN_TAGS.get(fpga[3], fpga[3])
     src = d["board"] or d["sim"]
     if src:
         lat_c = src.get("latency_cycles") or src["continuous"]["latency_cycles"]
@@ -340,14 +446,24 @@ def write_tex(d):
         m["RatioFpgaMcu"] = vn(fpga[2] / (best["ksps"] / 1000), 0)
 
     for r in d["lat"]:
-        if r[0] == "SoC" and "có tải" in r[1]:
+        if r[0] == "SoC" and r[3] == "đo" and "có tải" in r[1]:
             key = "LinuxRtMax" if "RT" in r[1] else "LinuxStdMax"
             m[key] = vn(r[2] / 1000, 0)
+    # Kem don vi + nhan; chua do tren Pi thi dung so tai lieu (AC6) va gan nhan nguon
+    for key, vi_lit, en_lit in (("LinuxStdMax", "vài ms", "a few ms"), ("LinuxRtMax", "30–80 µs", "30–80 µs")):
+        if key in m:
+            m[key + "U"] = m[key] + " µs \\nhan{đo}"
+            m[key + "UEn"] = m[key] + " µs \\nhan{measured}"
+        else:
+            m[key + "U"] = vi_lit + " \\nhan{nguồn: AC6}"
+            m[key + "UEn"] = en_lit + " \\nhan{source: AC6}"
 
     keys = ["McuClock", "McuBestVariant", "McuBestCps", "McuBestMsps", "McuEff", "McuShiftCps",
-            "McuIrqMin", "McuIrqMax", "McuIrqRange", "McuIrqHogMax", "PiBestMsps", "FpgaMsps", "FpgaLabel",
+            "McuIrqMin", "McuIrqMax", "McuIrqRange", "McuIrqHogMax", "PiBestMsps", "PiLabel", "PiLabelEn",
+            "PiSimRange", "PiInsn", "PiSimPass", "FpgaMsps", "FpgaLabel", "FpgaLabelEn",
             "FpgaLatCycles", "FpgaLatNs", "FpgaPass", "FpgaSpc", "FpgaFmax", "FpgaDsp", "FpgaLut", "FpgaFf",
-            "FpgaPower", "RatioFpgaPi", "RatioFpgaMcu", "LinuxStdMax", "LinuxRtMax"]
+            "FpgaPower", "RatioFpgaPi", "RatioFpgaMcu", "LinuxStdMax", "LinuxRtMax",
+            "LinuxStdMaxU", "LinuxStdMaxUEn", "LinuxRtMaxU", "LinuxRtMaxUEn"]
     lines = ["% TU DONG SINH boi experiments/e5_crosscheck/collect.py - KHONG SUA TAY",
              "% So chua do hien \\chuado{} (report dinh nghia macro nay)."]
     for k in keys:

@@ -1,0 +1,16 @@
+{
+  "label": "do",
+  "experiment": "E3_soc_fir",
+  "machine": "aarch64", "kernel": "7.0.0-42-generic #42~24.04.1-Ubuntu SMP PREEMPT_DYNAMIC Mon Oct 19 14:43:01 UTC 2",
+  "pinned_cpu": 0, "pinned_ok": true,
+  "samples_per_run": 2048000, "runs": 15,
+  "build_flags": "-O2 -mcpu=cortex-a72 -static -fno-tree-vectorize",
+  "variants": [
+    {"variant": "shift_loop", "correct": true, "mismatches": 0, "first_bad": -1,
+     "ns_per_sample_min": 96.920, "ns_per_sample_median": 103.004, "ns_per_sample_max": 112.506,
+     "msps_median": 9.71, "mmac_per_s_median": 155.3},
+    {"variant": "circular_unrolled", "correct": true, "mismatches": 0, "first_bad": -1,
+     "ns_per_sample_min": 31.992, "ns_per_sample_median": 33.371, "ns_per_sample_max": 39.119,
+     "msps_median": 29.97, "mmac_per_s_median": 479.5}
+  ]
+}

@@ -1,0 +1,42 @@
+% ============================================================================
+% English slides, plain theme. Build: xelatex slides_en.tex (twice)
+% ============================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+\newcommand{\langEN}{}
+\input{shared.tex}
+\IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{\setsansfont{Arial}}
+\IfFontExistsTF{Noto Sans}{\setmainfont{Noto Sans}}{\setmainfont{Arial}}
+
+\usetheme{default}
+\usefonttheme{professionalfonts}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{%
+  \hfill\textcolor{cInk2}{\scriptsize CO3053 · Topic 09 \quad \insertframenumber/\inserttotalframenumber}\hspace*{1em}\vspace*{0.6em}}
+\setbeamercolor{frametitle}{fg=black}
+\setbeamerfont{frametitle}{series=\bfseries,size=\Large}
+\setbeamercolor{structure}{fg=cInk2}
+\setbeamertemplate{itemize items}{\textbullet}
+\setbeamersize{text margin left=1.2cm,text margin right=1.2cm}
+
+\usepackage{tikz}
+\input{slides_common.tex}
+
+\title{\textbf{MCU – SoC – FPGA}}
+\subtitle{Trade-offs in Performance, Cost and Flexibility}
+\author{CO3053 Embedded Systems · Semester 261 · Topic 09}
+\date{}
+
+\begin{document}
+
+% ---------------------------------------------------------------- 1
+\begin{frame}[plain]
+\vfill
+{\Huge\bfseries \MCU{} – \SoC{} – \FPGA}\par\medskip
+{\Large Trade-offs in Performance, Cost and Flexibility}\par\bigskip
+{\color{cInk2} CO3053 Embedded Systems · Semester 261 · Topic 09}
+\vfill
+\end{frame}
+
+\input{slides_body_en.tex}
+
+\end{document}

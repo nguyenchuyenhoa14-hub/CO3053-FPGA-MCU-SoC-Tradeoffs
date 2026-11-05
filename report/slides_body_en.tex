@@ -1,0 +1,518 @@
+% ============================================================================
+% English slide content, shared by slides_en.tex and slides_hcmut_en.tex (no title page)
+% Order: MCU -> FPGA -> SoC (what it is, strengths/weaknesses, where it wins)
+%        -> Comparison (literature, our test case, results) -> Conclusion
+% ============================================================================
+
+% ================================================================ INTRO
+\begin{frame}{The question}
+\begin{center}
+{\Large When should you choose an \MCU, an \FPGA{} or a \SoC?}
+\end{center}
+\bigskip
+\begin{itemize}
+\item Judged on three criteria: \textbf{performance}, \textbf{cost} and \textbf{flexibility}
+\item \emph{Not} an attempt to prove one platform is ``the best'': \texttt{pe2} lists a biased goal as a common mistake
+\item Every number on these slides carries a tag saying where it comes from:\\
+      \nhan{measured} \nhan{simulated} \nhan{tool estimate} \nhan{calculated} \nhan{source}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Roadmap}
+\begin{columns}[T]
+\begin{column}{0.5\linewidth}
+\begin{enumerate}\setlength{\itemsep}{6pt}
+\item \MCU: what it is, strengths, weaknesses, where it wins
+\item \FPGA: what it is, strengths, weaknesses, where it wins
+\item \SoC: what it is, strengths, weaknesses, where it wins
+\item \textbf{Comparison}: published data, our test case, our results, decision matrix
+\item Conclusion
+\end{enumerate}
+\end{column}
+\begin{column}{0.46\linewidth}\small
+\soquyetdinh{Each platform is first examined on its own, \textbf{with the same template}: what it is → where it is strong → where it is weak → which domains it wins.}
+\soquyetdinh{Only then are the three placed \textbf{side by side}, on the same axes and on the same FIR workload.}
+\end{column}
+\end{columns}
+\end{frame}
+
+% ================================================================ 1. MCU
+\phan{1}{MCU}{Microcontroller: small, cheap, frugal and on time}{cMCU}
+
+\begin{frame}{What is an \MCU?}
+\begin{columns}[T]
+\begin{column}{0.58\linewidth}\small
+\begin{itemize}\setlength{\itemsep}{4pt}
+\item One chip with a \textbf{small CPU core} (ARM Cortex-M), \textbf{flash}, \textbf{SRAM} and \textbf{peripherals}: timers, ADC, PWM, UART, SPI, I²C
+\item Runs \textbf{bare-metal} or an \textbf{RTOS}, programmed in C with direct register access (Lecture 2)
+\item Executes \textbf{sequentially}: one thing per cycle
+\item \textbf{No MMU}, so it cannot run Linux
+\item Our board: Blue Pill STM32F103C6, Cortex-M3 at 72 MHz
+\end{itemize}
+\end{column}
+\begin{column}{0.38\linewidth}\centering
+\anh[0.95\linewidth]{img/mcu_stm32f103.jpg}{\creditMcu}
+\footnotesize Blue Pill board (STM32F103 family)
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{\MCU: strengths and weaknesses}
+\manhyeu{cMCU}{%
+  \item \textbf{Cheap}: STM32H743 £9–12 per chip; the F103 family costs a few dollars \nhan{source}
+  \item \textbf{Extremely frugal when idle}: STM32U5 300 nA, H743 2.43 µA in Standby \nhan{source}; 10+ years on a coin cell (TI)
+  \item \textbf{On time}: bare-metal interrupt latency 1–3 µs \nhan{source: AC6}; we measured \expMcuIrqRange{} ns \nhan{measured}
+  \item \textbf{Boots in milliseconds}, ready as soon as power is applied
+  \item \textbf{Safety-certified}: AURIX reaches ASIL-D; AEC-Q100 Grade 0 up to 150~°C
+  \item \textbf{Fast time-to-market} for simple, fixed functions (Lecture 2)
+}{%
+  \item \textbf{Low performance}: CoreMark 608–2,424 \nhan{source}
+  \item \textbf{Not enough for parallel work}: H743 peaks at ≈0.48 G MAC/s, ≈29\% of what the video filter needs \nhan{calculated}
+  \item \textbf{No Linux}: TCP/IP, file system, camera drivers written by hand
+  \item \textbf{Worst case is set by the software}: one higher-priority 20 µs ISR pushes latency to \expMcuIrqHogMax{} µs \nhan{measured}
+  \item The M3 has \textbf{no SIMD}: the fastest version still takes \expMcuBestCps{} cycles/sample; CMSIS-DSP is no faster than C \nhan{measured}
+}
+\end{frame}
+
+\begin{frame}{Where the \MCU{} wins: automotive ECUs}
+\begin{columns}[T]
+\begin{column}{0.55\linewidth}\footnotesize
+\begin{itemize}
+\item A mainstream car carries 25–35 MCUs, a luxury car 60–70
+\item AURIX TC3xx: 4 of 6 cores run in \textbf{lockstep}, targeting \textbf{ASIL-D} (ISO 26262), for powertrain and EV inverters
+\item AEC-Q100 Grade 0: operates from \textbf{−40 to 150~°C}; NXP S32K14xW comes with a 15-year supply commitment
+\item Boots in milliseconds, sub-µs interrupts, a few dollars per chip
+\end{itemize}
+\centering\anh[0.3\linewidth]{img/app_ecu.jpg}{\creditEcu}
+\end{column}
+\begin{column}{0.42\linewidth}\small
+\soquyetdinh{\textbf{Why not a \SoC:} Linux boots slowly and its latency is not deterministic}
+\soquyetdinh{\textbf{Why not an \FPGA:} expensive; configuration lives in SRAM, so it is exposed to radiation upsets (SEU); hard to certify for millions of cars}
+\soquyetdinh{\textbf{Where the advantage ends:} ADAS and infotainment use SoCs; domain controllers are merging many ECUs into fewer units}
+\end{column}
+\end{columns}
+\par\vspace{2pt}\tiny\textcolor{cInk2}{Also dominant in: FOC motor control (under 21 µs of a 50 µs budget), battery sensor nodes (300 nA, over 10 years on a CR2032), home appliances}
+\end{frame}
+
+% ================================================================ 2. FPGA
+\phan{2}{FPGA}{Programmable logic: true parallelism, fixed latency}{cFPGA}
+
+\begin{frame}{What is an \FPGA?}
+\begin{columns}[T]
+\begin{column}{0.55\linewidth}\small
+\begin{itemize}\setlength{\itemsep}{4pt}
+\item An array of thousands of \textbf{logic cells} (LUT + flip-flop), plus \textbf{DSP} blocks (multiply-accumulate) and \textbf{block RAM}, wired together freely
+\item It runs no program: the algorithm is \textbf{laid out in space}, each operation gets its own circuit and all of them run at once
+\item Described in an \textbf{HDL} (Verilog, VHDL); the configuration lives in SRAM, so it can be \textbf{reloaded}
+\item Our board: Arty Z7-20, the PL of an XC7Z020 (220 DSP48E1, 53,200 LUTs); our FIR runs \textbf{LUT-only, 0 DSPs}
+\end{itemize}
+\end{column}
+\begin{column}{0.41\linewidth}\centering
+\anh[0.95\linewidth]{img/fpga_cell.png}{\creditCell}
+\footnotesize One logic cell: LUTs, adder, flip-flop\par\medskip
+\anh[0.45\linewidth]{img/fpga_artix7.jpg}{\creditArtix}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{\FPGA: strengths and weaknesses}
+\manhyeu{cFPGA}{%
+  \item \textbf{True parallelism}: 220–240 DSPs give ≈44–48 G MAC/s at 200 MHz \nhan{calculated}; XC7A100T quoted up to 264 G \nhan{source}
+  \item \textbf{One sample per clock}: our FIR reaches \expFpgaSpc{} samples/cycle \nhan{\expFpgaLabelEn}
+  \item \textbf{Fixed latency, in nanoseconds}: 13.9 ns tick-to-trade \nhan{source}; our pipeline takes \expFpgaLatCycles{} cycles = \expFpgaLatNs{} ns
+  \item \textbf{Low energy per operation}: FIR on an FPGA uses ≈95–190× less energy than on a CPU \nhan{calculated, Arucu \& Iliev}
+  \item \textbf{I/O wired straight to the pins}, and \textbf{reloadable} when a standard changes
+}{%
+  \item \textbf{Expensive}: XC7A100T (Artix-7 family) €143.90 per chip \nhan{source}
+  \item \textbf{Hard to program}: every operation must be described at hardware level (Arucu \& Iliev)
+  \item \textbf{Less flexible}: adding an FPGA lowers flexibility from ``High'' to ``Medium'' (Lecture 3)
+  \item \textbf{No operating system}: a network stack or a user interface must be built from scratch
+  \item \textbf{Does not win small problems}: one desktop CPU core filters a 16-tap FIR at ≈140 MSPS \nhan{measured, x86 reference}
+}
+\end{frame}
+
+\begin{frame}{Where the \FPGA{} wins: data streams and chip prototyping}
+\scriptsize\textcolor{cInk2}{For parallel computing in general, GPUs are more common. The FPGA wins when data \textbf{streams from an ADC}, latency must be \textbf{fixed}, and the standard still changes or volume is too small for an ASIC.}
+\begin{columns}[T]
+\begin{column}{0.55\linewidth}\footnotesize
+\begin{itemize}
+\item \textbf{Ultrasound:} beamforming 128–1,024 channels, 4.83 GS/s on one FPGA, wired to the analog front end
+\item \textbf{5G radio units:} low-PHY and DFE on RFSoC or Agilex; O-RAN still evolves, so reloading matters
+\item \textbf{ASIC prototyping:} HAPS runs up to 1.6 billion gates of RTL on many FPGAs before tape-out
+\item \textbf{HFT:} 13.9 ns tick-to-trade
+\end{itemize}
+\vspace{-2pt}\centering\anh[0.13\linewidth]{img/app_ultrasound.jpg}{\creditUltra}
+\end{column}
+\begin{column}{0.42\linewidth}\small
+\soquyetdinh{\textbf{Why not an \MCU:} ≈3.5× short of the needed throughput even at 100\% efficiency}
+\soquyetdinh{\textbf{Why not a \SoC:} SIMD or a GPU may keep up, but determinism is lost and power rises}
+\soquyetdinh{\textbf{Where it ends:} at high volume with a stable algorithm, an ASIC wins (a phone's ISP, modem)}
+\end{column}
+\end{columns}
+\end{frame}
+
+% ================================================================ 3. SoC
+\phan{3}{SoC}{System on chip: strong CPU + Linux + hardware accelerators}{cSoC}
+
+\begin{frame}{What is a \SoC?}
+\begin{columns}[T]
+\begin{column}{0.56\linewidth}\small
+\begin{itemize}\setlength{\itemsep}{4pt}
+\item \textbf{Application} cores (ARM Cortex-A) with an \textbf{MMU} and \textbf{caches}, plus a GPU, video codecs and network accelerators, all on one chip
+\item Runs \textbf{Linux}: drivers, network stack and file system come ready-made (Lecture 2)
+\item Dedicated hardware blocks (packet engine, ISP, NPU, modem) do the heavy lifting; the CPU handles control
+\item Our board: Raspberry Pi 4, 4×Cortex-A72 at 1.8 GHz
+\end{itemize}
+\end{column}
+\begin{column}{0.4\linewidth}\centering
+\anh[0.95\linewidth]{img/soc_rpi4.jpg}{\creditRpi}
+\footnotesize Raspberry Pi 4 Model B
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{\SoC: strengths and weaknesses}
+\manhyeu{cSoC}{%
+  \item \textbf{Strongest CPU of the three}: the Pi 4 scores 38,200 CoreMark, ≈16× the H743 \nhan{source}
+  \item \textbf{Linux}: cameras work out of the box via V4L2, plus networking, file systems and remote updates
+  \item \textbf{Integrated hardware blocks}: router packet engine at 37.5 Mpps; phones add an NPU, ISP and 5G modem \nhan{source}
+  \item \textbf{Cheap boards}: Pi 4 launched at \$35 \nhan{source}
+  \item \textbf{Fast time-to-market} for feature-rich, connected products (Lecture 2)
+}{%
+  \item \textbf{Non-deterministic latency}: PREEMPT\_RT 30–80 µs, standard Linux a few ms \nhan{source: AC6}
+  \item \textbf{Power-hungry even when idle}: Pi 4 ≈3 W for the whole board, ≈7 W at peak \nhan{source}
+  \item \textbf{Slow to boot}, complex software stack (kernel, drivers, security)
+  \item \textbf{Weak for hard real time} without a real-time patch (Lecture 2)
+}
+\end{frame}
+
+\begin{frame}{Where the \SoC{} wins: Wi-Fi routers and phones}
+\begin{columns}[T]
+\begin{column}{0.55\linewidth}\footnotesize
+\begin{itemize}
+\item \textbf{Router:} Qualcomm IPQ = CPU running Linux/OpenWrt + Wi-Fi + switch + \textbf{hardware packet engine} (37.5 Mpps) + crypto
+\item \textbf{Phone:} Snapdragon 8 Elite = CPU + GPU + NPU + ISP + 5G modem on a 3 nm chip
+\item Linux runs the control plane; hardware blocks run the data plane
+\end{itemize}
+\hfill\begin{minipage}[t]{0.22\linewidth}\centering\anh{img/app_router.jpg}{\creditRouter}\end{minipage}\hspace{0.06\linewidth}%
+\begin{minipage}[t]{0.22\linewidth}\centering\anh{img/app_phone_soc.jpg}{\creditPhone}\end{minipage}\hfill\null
+\end{column}
+\begin{column}{0.42\linewidth}\small
+\soquyetdinh{\textbf{Why not an \MCU:} no MMU, so no Linux; the whole TCP/IP stack would have to be rewritten}
+\soquyetdinh{\textbf{Why not an \FPGA:} writing a network stack and a UI in HDL is far too costly for a consumer device}
+\soquyetdinh{\textbf{Where the advantage ends:} hard real-time control, which is why these devices still carry small MCUs}
+\end{column}
+\end{columns}
+\par\vspace{2pt}\tiny\textcolor{cInk2}{Also dominant in: IP cameras, TVs and set-top boxes, IoT gateways, in-car infotainment}
+\end{frame}
+
+\begin{frame}{When you need both: hybrid CPU + FPGA}
+\begin{columns}[T]
+\begin{column}{0.66\linewidth}\small
+\begin{itemize}
+\item The problem needs \textbf{both} a rich operating system \textbf{and} hard timing or heavy parallel work (ADAS, industrial control)
+\item Zynq UltraScale+ puts on one chip: 4×A53 running Linux, 2×R5 in lockstep for real time, and FPGA fabric
+\item Lecture 3, Option \#2: the CPU handles flexible computation, the FPGA keeps actuator timing even when the CPU is busy
+\item FIR on an FPGA+ARM SoC ran 8.86× faster than ARM alone, with the best price/performance of the configurations tested \nhan{source}
+\end{itemize}
+\end{column}
+\begin{column}{0.3\linewidth}\centering
+\anh[0.9\linewidth]{img/hybrid_zynq.jpg}{\creditZynq}
+\scriptsize Zynq UltraScale+: Arm + FPGA on one chip
+\end{column}
+\end{columns}
+\vfill
+\soquyetdinh{\textbf{The price:} higher cost and lower flexibility than a single CPU}
+\end{frame}
+
+% ================================================================ 4. COMPARISON
+\phan{4}{Comparison}{The three platforms on the same axes}{black}
+
+\begin{frame}{Trade-off overview}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l Y Y Y@{}}
+\toprule
+Criterion & \MCU & \FPGA & \SoC\\
+\midrule
+Sequential CPU (CoreMark) & Low: 608–2,424 & Not applicable & \textbf{High: 38,200} (Pi 4)\\
+Parallel throughput & ≈0.48 G MAC/s \nhan{calculated} & \textbf{≈48 G MAC/s} \nhan{calculated} & Medium (SIMD, GPU)\\
+Worst-case latency & 1–3 µs & \textbf{nanoseconds} & 30 µs – a few ms\\
+Idle power & \textbf{µW range} (chip) & no data & ≈3 W (board)\\
+Price & \textbf{£9–12/chip} & €144/chip & \$35/board\\
+Programming & C, registers & HDL, hardest & \textbf{Linux, rich libraries}\\
+Flexibility / time-to-market & Fast for simple products & Lowest & Fast for feature-rich products\\
+\bottomrule
+\end{tabularx}
+\par\medskip
+\centering\scriptsize\textcolor{cInk2}{Sources: ST, OpenBenchmarking, AC6, STAC-T0, RS, Farnell, AnandTech, Lectures 2–3. Bold marks the winner for each criterion. The next slides look at each criterion.}
+\end{frame}
+
+\begin{frame}{Raw CPU performance: CoreMark}
+\centering
+\anh[0.86\linewidth]{plots_en/lit_coremark.png}{Data: ST product overview; ST STM32H743; OpenBenchmarking (Pi 4, all 4 cores). Re-plotted by the team.}
+\vfill
+\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small The \SoC{} (Pi 4) has ≈16× the CPU performance of the \MCU{} (H743). CoreMark does not apply to the \FPGA, which runs no sequential program.\end{beamercolorbox}
+\end{frame}
+
+\begin{frame}{Parallel throughput: filtering 1080p video}
+\centering
+\anh[0.86\linewidth]{plots_en/lit_mac.png}{Data: Lee \& Seshia §8.1 (requirement); XA Artix-7 datasheet (264 G). [calculated] values follow the stated assumptions. Re-plotted by the team.}
+\vfill
+\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small The \MCU{} covers only ≈29\% of the requirement at 100\% efficiency; the \FPGA{} uses only ≈3.5\% of its capacity \nhan{calculated}\end{beamercolorbox}
+\end{frame}
+
+\begin{frame}{Published evidence: FIR on FPGA, GPU and CPU}
+\centering
+\anh[0.86\linewidth]{plots_en/lit_fir_arucu.png}{Data: Arucu \& Iliev, J. Low Power Electron. Appl. 15(3):40, 2025. Re-plotted by the team.}
+\vfill
+\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small The \FPGA{} is ≈27× faster than a Cortex-A9 and uses ≈95–190× less energy \nhan{calculated}.\\[2pt]\scriptsize CPU and GPU power are the authors' estimates; the study has no MCU.\end{beamercolorbox}
+\end{frame}
+
+\begin{frame}{Worst-case latency in the literature}
+\centering
+\anh[0.86\linewidth]{plots_en/lit_latency.png}{Data: AC6 (MCU, Linux); A-Team Insight, STAC-T0 (FPGA). ``A few ms'' has no exact figure, so it is drawn faded. Re-plotted by the team.}
+\vfill
+\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small Each platform sits 1–2 orders of magnitude from the next. The measurements differ in nature, so compare orders of magnitude only.\end{beamercolorbox}
+\end{frame}
+
+\begin{frame}{Idle power and price}
+\centering
+\anh[0.86\linewidth]{plots_en/lit_idle_power.png}{Data: ST STM32H743; Arrow (STM32U5); TechFeed (Pi 4). MCU power = current × 3.3 V [calculated]. Re-plotted by the team.}
+\vfill
+\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small A ≈3-million-fold gap: this is why the \MCU{} dominates battery-powered devices.\\[2pt] Price: \MCU{} £9–12/chip · \SoC{} \$35/board · \FPGA{} €144/chip \nhan{source; chip vs. board}\end{beamercolorbox}
+\end{frame}
+
+% ---------------------------------------------------------------- our test case
+\begin{frame}{Our test case: one kernel, one specification, three platforms}
+\begin{columns}[T]
+\begin{column}{0.56\linewidth}\small
+\textbf{Workload:} a 16-tap low-pass FIR filter in Q15 fixed point\par\smallskip
+\[
+y[n]=\operatorname{sat}_{16}\!\Big(\big\lfloor \textstyle\sum_{k=0}^{15} h[k]\,x[n-k] \,/\, 2^{15}\big\rfloor\Big)
+\]
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item Coefficients: windowed sinc (Hamming), $f_c = 0.2 f_s$, sum $=2^{15}$ (unity DC gain)
+\item 1,024 input samples, generated once by a \textbf{Python golden model}
+\item The \textbf{same} coefficients and vectors are compiled into the MCU firmware, the Pi benchmark and the FPGA block RAM
+\item Pass criterion: \textbf{every output sample matches the golden model bit for bit}
+\end{itemize}
+\end{column}
+\begin{column}{0.4\linewidth}\small
+\soquyetdinh{\textbf{Why bit-exact?} If the three platforms computed slightly different things (float vs. fixed point, other rounding), a speed comparison would be unfair. One arithmetic specification removes that doubt.}
+\soquyetdinh{\textbf{Status:} FPGA RTL passes 1,024/1,024 samples in simulation, both with a continuous stream and with random gaps \nhan{simulated}}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Test vectors: what each part checks}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r Y@{}}
+\toprule
+Section & Samples & What it checks\\
+\midrule
+Unit impulse (32\,767) & 32 & The output reproduces the 16 coefficients: catches tap-order or indexing errors\\
+Step of 1,000 & 32 & Settles at the DC gain: catches scaling and shift errors\\
+Step at $+$max and $-$min & 64 & Full-scale inputs: catches sign and overflow handling\\
+Adversarial pattern & 32 & Signs aligned with the coefficients, the largest possible sum: forces \textbf{saturation}\\
+Alternating $\pm$max & 32 & Highest frequency at full scale: checks the stop band and sign flips\\
+Uniform random (seed 3053) & 832 & The general case, and the bulk of the throughput measurement\\
+\bottomrule
+\end{tabularx}
+\par\smallskip
+\centering\footnotesize 60 of the 1,024 outputs saturate. Edge cases are tested on purpose, not only typical data.
+\end{frame}
+
+\begin{frame}{Why FIR exposes the architecture}
+\centering
+\begin{tikzpicture}[x=1cm,y=1cm,font=\scriptsize]
+  % MCU
+  \node[font=\small\bfseries,text=cMCU] at (1.9,3.15) {MCU: in time};
+  \foreach \i in {0,...,7} \node[box=cMCU,minimum width=0.38cm,minimum height=0.38cm,inner sep=0pt] at (0.2+\i*0.48,2.4) {};
+  \node at (1.9,1.85) {16 MACs, one after another};
+  \draw[->,cInk2] (0,1.55) -- (3.8,1.55) node[right] {t};
+  \node[align=center] at (1.9,0.9) {cycles/sample grows\\ \textbf{linearly} with taps};
+  % SoC
+  \node[font=\small\bfseries,text=cSoC] at (6.4,3.15) {SoC: wider in time};
+  \foreach \i in {0,...,3} \node[box=cSoC,minimum width=0.85cm,minimum height=0.38cm,inner sep=0pt] at (5.0+\i*0.95,2.4) {};
+  \node at (6.4,1.85) {SIMD: several MACs per instruction};
+  \draw[->,cInk2] (4.5,1.55) -- (8.3,1.55) node[right] {t};
+  \node[align=center] at (6.4,0.9) {fast clock, caches,\\ but the OS can interrupt};
+  % FPGA
+  \node[font=\small\bfseries,text=cFPGA] at (11.0,3.15) {FPGA: in space};
+  \foreach \i in {0,...,7} \node[mul] (m\i) at (9.4+\i*0.32,2.55) {};
+  \node[box=cFPGA,minimum width=2.4cm] (tree) at (10.52,1.9) {adder tree};
+  \foreach \i in {0,...,7} \draw[cFPGA] (m\i) -- (tree.north);
+  \node[box=cFPGA,minimum width=0.9cm] (out) at (12.4,1.9) {$y[n]$};
+  \draw[->,cFPGA] (tree) -- (out);
+  \node[align=center] at (11.0,0.9) {one multiplier per tap:\\ \textbf{1 sample/clock} at any tap count};
+\end{tikzpicture}
+\par\medskip
+\begin{itemize}\small\setlength{\itemsep}{2pt}
+\item FIR is pure \textbf{multiply-accumulate}: the building block of filtering, radio, beamforming and CNN convolution
+\item The same arithmetic maps to each architecture in its natural way, so the result reflects the \textbf{architecture}, not the algorithm
+\item A real filter is a \textbf{stream}: it tests sustained throughput \emph{and} the time per sample, as a sensor or ADC would
+\end{itemize}
+\end{frame}
+
+\begin{frame}{What we measure, and how}
+\footnotesize
+\begin{tabularx}{\linewidth}{@{}l Y Y Y@{}}
+\toprule
+Metric & \MCU{} STM32F103 & \FPGA{} Arty Z7-20 & \SoC{} Raspberry Pi 4\\
+\midrule
+Correctness & Compare to golden, 4 code versions & Self-check on chip, result over UART & Compare to golden, \texttt{-O2} and \texttt{-O3}\\
+Throughput & \texttt{DWT->CYCCNT} cycles, interrupts off, median of 7 & Cycle counter from first input to last output at 125 MHz & \texttt{clock\_gettime}, pinned core, median of 15 runs of 2 M samples\\
+Latency, determinism & Timer IRQ latency, 20,000 samples × 3 load scenarios & Pipeline depth in clock cycles & \texttt{cyclictest}, idle and under \texttt{stress-ng}\\
+Power & Current meter: run, sleep, standby & Vivado \texttt{report\_power} \nhan{tool estimate} & USB-C power meter, whole board\\
+Resources & Flash, RAM & DSP, LUT, Fmax (Vivado) & —\\
+\bottomrule
+\end{tabularx}
+
+\end{frame}
+
+\begin{frame}{Has anyone tested it this way before?}
+\scriptsize\renewcommand{\arraystretch}{1.1}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}p{3.0cm} Y Y@{}}
+\toprule
+Prior work & What it compared & What it tells us\\
+\midrule
+BDTI DSP Kernel Benchmarks & 12 kernels, including real/complex block FIR, on DSP processors & FIR is an \textbf{industry-standard} kernel for comparing processors; BDTI notes kernels are hard to apply to FPGAs\\
+EEMBC AutoBench & FIR on 16/32-bit fixed point, modelling an automotive/industrial task & Our 16-bit fixed-point FIR matches a \textbf{standard MCU workload}\\
+Arucu \& Iliev, 2025 & FIR on Zynq FPGA vs. Tesla K80 GPU vs. Cortex-A9 & FPGA ≈27× faster than the CPU, lowest power\\
+Tatar et al., AICT 2022 & FIR on ARM vs. Zynq FPGA+ARM vs. Intel i7 & FPGA+ARM 8.86× faster than ARM alone\\
+IEEE study (Xplore 10817876) & FIR of 3 lengths on Cyclone 10 LP, Stratix V, TI C6747 DSP, AMD Zen 3 & Same FIR, several architectures: the method is accepted\\
+MathWorks (STM32F746) & CMSIS-DSP vs. plain C on a Cortex-M7, cycle counts & Same MCU method as ours (cycles, CMSIS vs. C)\\
+\bottomrule
+\end{tabularx}
+\par\smallskip
+\soquyetdinh{\textbf{The gap we fill:} none of these runs \textbf{one bit-exact FIR} on an \MCU, an \FPGA{} \emph{and} a \SoC{} with the same vectors.}
+\end{frame}
+
+\begin{frame}{Experiment setup}
+\small
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+\MCU  & STM32F103, Cortex-M3 & 4 versions (plain C, unrolled C, CMSIS \texttt{arm\_fir\_q15}, \texttt{arm\_fir\_fast\_q15}); interrupt latency in 3 scenarios\\
+\FPGA & Arty Z7-20 (XC7Z020 PL) & 7-stage LUT-only pipeline (0 DSPs); self-check against golden on chip at 125 MHz; Vivado for Fmax and power\\
+\SoC  & Raspberry Pi 4 (A72) & Same C code, \texttt{-O2} and \texttt{-O3} (NEON); \texttt{cyclictest}. Until the board is run: QEMU checks bit-exactness and counts instructions/sample\\
+\bottomrule
+\end{tabularx}
+\par\medskip
+\textcolor{cInk2}{The Cortex-M3 has no SIMD instructions (SMLAD), so CMSIS-DSP gets no SIMD speed-up as it would on an M4}
+\end{frame}
+
+\begin{frame}{Results: throughput}
+\centering\chart[0.92\linewidth]{e5_throughput_en.png}
+\par\small
+\MCU: \expMcuBestMsps{} MSPS \nhan{measured} (\FPGA{} is \expRatioFpgaMcu× faster) \quad
+\FPGA: \expFpgaSpc{} samples/cycle, \expFpgaMsps{} MSPS \nhan{\expFpgaLabelEn} \quad
+\SoC: \expPiBestMsps{} MSPS \nhan{\expPiLabelEn; IPC 1–3: \expPiSimRange}
+\end{frame}
+
+\begin{frame}{Results: worst-case latency}
+\centering\chart[0.92\linewidth]{e5_worst_latency_en.png}
+\par\small\raggedright
+\MCU{} IRQ while running FIR: \expMcuIrqRange{} ns · with a higher-priority 20 µs ISR: \expMcuIrqHogMax{} µs \nhan{measured}\\
+\FPGA{} pipeline: \expFpgaLatCycles{} cycles = \expFpgaLatNs{} ns \nhan{\expFpgaLabelEn} \quad
+\SoC{} standard Linux: \expLinuxStdMaxUEn{} · PREEMPT\_RT: \expLinuxRtMaxUEn
+\end{frame}
+
+\begin{frame}{Cross-check against the literature}
+\scriptsize\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\linewidth}{@{}Y Y Y@{}}
+\toprule
+Question & We measured & Literature says\\
+\midrule
+How close does the MCU get to ``1 MAC per cycle''? & \expMcuEff\% (\expMcuBestCps{} cycles/sample) & The plan assumed 100\%; flash needs 2 wait states at 72 MHz and \texttt{const} data is read from flash\\
+Bare-metal MCU interrupt latency & \expMcuIrqRange{} ns & 1–3 µs (AC6)\\
+How much faster is the FPGA than the MCU / a CPU? & \expRatioFpgaMcu× (vs. MCU); \expRatioFpgaPi× (vs. Pi 4, \expPiLabelEn) & ≈27× (vs. A9, Arucu \& Iliev)\\
+Does the FIR run bit-exact on ARMv8 (Cortex-A72)? & \expPiSimPass{} (QEMU), \expPiInsn{} instr/sample & —\\
+FPGA resources for the 16-tap FIR (LUT-only) & \expFpgaDsp/220 DSP · \expFpgaLut{} LUT · \expFpgaFf{} FF & Fmax ≈ \expFpgaFmax{} MHz, \expFpgaPower{} W \nhan{tool estimate}\\
+\bottomrule
+\end{tabularx}
+\par\smallskip\footnotesize
+\textbf{Side observation:} one x86 core filters at ≈140 MSPS. The FPGA does not win on raw speed for small problems, but because \textbf{throughput stays constant as taps grow}, \textbf{latency is fixed} and \textbf{power is low}.
+\end{frame}
+
+\begin{frame}{Summary: where each platform wins}
+\small
+\begin{tabularx}{\linewidth}{@{}l Y Y Y@{}}
+\toprule
+& Typical domains & Deciding factor & Why not the other two\\
+\midrule
+\MCU  & Automotive ECUs, motors, battery sensors & ASIL-D, 150~°C, nA idle current, a few dollars & SoC boots slowly and is not deterministic; FPGA is expensive\\
+\FPGA & Ultrasound, 5G radio, ASIC prototyping, HFT & Parallelism + direct I/O + reconfigurability & MCU lacks throughput; SoC is not deterministic\\
+\SoC  & Wi-Fi routers, phones, IP cameras & Linux + hardware accelerators & MCU has no MMU; FPGA needs costly HDL work\\
+Hybrid & ADAS, industrial control & OS + hard timing & No single platform covers both\\
+\bottomrule
+\end{tabularx}
+\end{frame}
+
+\begin{frame}{Decision matrix}
+\small
+\begin{tabularx}{\linewidth}{@{}Y l Y@{}}
+\toprule
+If the problem\ldots & Choose & Because\\
+\midrule
+Runs on a battery for years, light workload & \MCU & 300 nA in Standby\\
+Has deadlines of tens of µs and needs safety certification & \MCU & Sub-µs interrupts; ASIL-D\\
+Needs over ≈0.5 G MAC/s sustained, or high-speed I/O & \FPGA{} / hybrid & 1 sample/clock, ≈44–48 G MAC/s\\
+Needs nanosecond latency & \FPGA & 13.9 ns\\
+Needs Linux, cameras, networking; soft timing & \SoC & ≈16× CoreMark; drivers ready-made\\
+Needs both a rich OS and hard timing & Hybrid & Zynq, Lecture 3\\
+\bottomrule
+\end{tabularx}
+\par\medskip\centering
+Better timing and throughput are paid for with \textbf{higher cost} and \textbf{lower flexibility}
+\end{frame}
+
+% ================================================================ 5. CONCLUSION
+\phan{5}{Conclusion}{}{black}
+
+\begin{frame}[plain]
+\vfill\centering
+{\Huge\bfseries ``There is no best platform,}\par\bigskip
+{\Large only the one that is \textbf{good enough} for the deciding number of the problem,\\ at the lowest cost.''}\par\medskip
+{\large\itshape\color{cInk2} — Nguyen Vo Hoang, Master's student, NTU}\par\vfill
+{\color{cInk2}Questions}
+\vfill
+\end{frame}
+
+% ================================================================ APPENDIX
+\appendix
+\begin{frame}{Appendix: anticipated questions}
+\small
+\begin{itemize}
+\item \textbf{``Is the MCU code optimized?''} Yes, there is a CMSIS-DSP version. The M3 has no SIMD; the best version reaches \expMcuBestCps{} cycles/sample.
+\item \textbf{``Is FPGA jitter really zero?''} RTL simulation has no real time. On silicon the latency is a fixed number of cycles; only ps-level clock jitter remains.
+\item \textbf{``Why compare a chip with a board?''} Only to compare orders of magnitude, and every table says so.
+\item \textbf{``How was FPGA power measured?''} It was not; it is Vivado \texttt{report\_power} (vector-less) \nhan{tool estimate}.
+\item \textbf{``Why no NRE figures?''} None are published. We use the time it took us to write the C and HDL versions as qualitative evidence.
+\item \textbf{``What about 64 taps?''} The MCU slows down about 4×. The FPGA still delivers 1 sample/clock; it only needs more LUTs/DSPs and a few more pipeline stages.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Main sources}
+\scriptsize
+\begin{itemize}
+\item ST: STM32H7/F4/MP1 overview, STM32H743; OpenBenchmarking: Raspberry Pi 4
+\item Arucu \& Iliev, J. Low Power Electron. Appl., 2025 (FIR on FPGA, GPU, CPU); Tatar et al., AICT 2022 (FIR on Zynq)
+\item BDTI DSP Kernel Benchmarks (bdti.com); EEMBC AutoBench FIR datasheet; IEEE Xplore 10817876 (FIR on FPGA vs. DSP); MathWorks CMSIS IFIR example on STM32F746
+\item AC6: Linux PREEMPT\_RT latency; A-Team Insight: Exegy/AMD STAC-T0
+\item Embedded World 02/2026 (MCUs per car); Automotive World (AURIX TC3xx); Future Electronics (NXP S32K Grade 0)
+\item Macnica, CNX Software (Qualcomm IPQ); GSMArena (Snapdragon 8 Elite)
+\item Kou et al., 2023 (ultrasound beamforming on FPGA); HPCwire (Fujitsu + Xilinx O-RAN); Intel (Agilex O-RU); Synopsys HAPS
+\item eeNews Europe (Zynq UltraScale+); Lectures 2 and 3; Lee \& Seshia §8.1
+\end{itemize}
+\par\medskip
+The full list with links is in the report (\texttt{report.pdf}).
+\ifdefined\hcmuttemplate\par\smallskip\tiny\textcolor{cInk2}{Slide template based on ``HCMUT-Slide'' by Nguyễn Quang Đức (Overleaf, CC BY 4.0).}\fi
+\end{frame}
+
+\begin{frame}{Image credits}
+\tiny
+Photos: Wikimedia Commons, unmodified apart from scaling. Charts marked ``Re-plotted by the team'' were rebuilt from published data; no original figures were copied.
+\begin{itemize}\setlength{\itemsep}{0pt}
+\creditList
+\end{itemize}
+\end{frame}

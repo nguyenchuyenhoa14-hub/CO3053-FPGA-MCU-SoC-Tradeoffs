@@ -1,0 +1,64 @@
+% ============================================================================
+% English slides, HCMUT template. Build: xelatex slides_hcmut_en.tex (twice)
+%
+% Giao dien dua tren "HCMUT-Slide" cua Nguyen Quang Duc (Overleaf, CC BY 4.0):
+%   https://www.overleaf.com/latex/templates/hcmut-slide/ctvgrqqgjjzn
+% Anh nen va logo trong hcmut/ duoc trich tu PDF mau cua template do.
+% Content: slides_body_en.tex (shared with slides_en.tex)
+% ============================================================================
+\documentclass[aspectratio=169,11pt]{beamer}
+\newcommand{\langEN}{}
+\input{shared.tex}
+\IfFontExistsTF{Noto Sans}{\setsansfont{Noto Sans}}{\setsansfont{Arial}}
+\IfFontExistsTF{Noto Sans}{\setmainfont{Noto Sans}}{\setmainfont{Arial}}
+
+\usetheme{Madrid}
+\usefonttheme{structurebold}
+\usefonttheme[onlymath]{serif}
+\definecolor{BKTemplate}{rgb}{0.11765, 0.30588, 0.47451}
+\usecolortheme[named=BKTemplate]{structure}
+\setbeamercolor{title}{fg=BKTemplate,bg=}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize items}{\textbullet}
+\setbeamersize{text margin left=1.1cm,text margin right=1.1cm}
+\newcommand{\hcmuttemplate}{}
+% Thanh tieu de nen xanh dam: ten nen tang hien mau trang de doc duoc
+\addtobeamertemplate{frametitle}{%
+  \renewcommand{\MCU}{\textbf{MCU}}\renewcommand{\SoC}{\textbf{SoC}}\renewcommand{\FPGA}{\textbf{FPGA}}}{}
+\usepackage{tikz}
+\input{slides_common.tex}
+
+% ---- Title page: FILL IN team members / supervisor before submitting ----
+\title[MCU – SoC – FPGA]{\textbf{MCU – SoC – FPGA}}
+\subtitle{Trade-offs in Performance, Cost and Flexibility}
+\author[Team \ldots{} · Topic 09]{%
+  Supervisor: \ldots\\
+  Team: \ldots{} (full name – student ID)}
+\institute[HCMUT]{%
+  CO3053 Embedded Systems · Semester 261\\
+  Ho Chi Minh City University of Technology – VNU-HCM}
+\date[11/2026]{November 2026}
+
+\begin{document}
+
+% Trang bia: nen rieng + logo
+\setbeamertemplate{background canvas}{%
+  \includegraphics[width=\paperwidth,height=\paperheight]{hcmut/front_bg.jpg}}
+\begin{frame}[plain]
+  \begin{tikzpicture}[remember picture,overlay]
+    \node[anchor=north east] at ([xshift=-0.6cm,yshift=-0.35cm]current page.north east)
+      {\includegraphics[height=1.0cm]{hcmut/logo_b.png}\hspace{0.25cm}\includegraphics[height=1.0cm]{hcmut/logo_a.png}};
+    \node[anchor=south] at ([yshift=0.35cm]current page.south)
+      {\includegraphics[width=0.55\paperwidth]{hcmut/logo_c.png}};
+  \end{tikzpicture}
+  \vspace{0.8cm}
+  \titlepage
+\end{frame}
+
+% Cac trang con lai: nen noi dung
+\setbeamertemplate{background canvas}{%
+  \includegraphics[width=\paperwidth,height=\paperheight]{hcmut/content_bg.jpg}}
+
+\input{slides_body_en.tex}
+
+\end{document}
