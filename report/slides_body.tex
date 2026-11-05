@@ -1,412 +1,309 @@
 % ============================================================================
-% Noi dung slide dung chung cho slides.tex va slides_hcmut.tex (khong co trang bia)
-% Thu tu: MCU -> FPGA -> SoC (dac tinh, diem manh/yeu, ung dung) -> So sanh -> Ket luan
+% Noi dung slide tinh gon theo Phuong an 1 (15 slide chinh + 2 slide phu luc)
+% Bien dich: xelatex slides.tex / slides_hcmut.tex
 % ============================================================================
 
-% ================================================================ MO DAU
+% ---------------------------------------------------------------- 2
 \begin{frame}{Câu hỏi của bài}
 \begin{center}
 {\Large Khi nào nên chọn \MCU, \FPGA{} hay \SoC?}
 \end{center}
 \bigskip
-\begin{itemize}
-\item Xét theo 3 tiêu chí: \textbf{hiệu năng}, \textbf{chi phí}, \textbf{độ linh hoạt}
-\item \emph{Không} nhằm chứng minh nền tảng nào ``tốt nhất'', vì đó là mục tiêu thiên vị mà \texttt{pe2} cảnh báo
-\item Mỗi con số trên slide có một nhãn cho biết nguồn gốc:\\
+\begin{itemize}\setlength{\itemsep}{6pt}
+\item Xét theo 3 tiêu chí cốt lõi: \textbf{hiệu năng} (thông lượng, độ trễ), \textbf{chi phí} (chip, board, công suất), và \textbf{độ linh hoạt} (hệ điều hành, tái cấu hình).
+\item \emph{Không} nhằm chứng minh nền tảng nào ``tốt nhất'', vì đó là mục tiêu thiên vị mà phương pháp đánh giá hiệu năng (\texttt{pe2}) cảnh báo.
+\item Mọi con số trong bài đều mang một nhãn minh bạch xác định nguồn gốc (\texttt{pe3}):\\
       \nhan{đo} \nhan{mô phỏng} \nhan{ước lượng công cụ} \nhan{tính} \nhan{nguồn}
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Lộ trình}
+% ---------------------------------------------------------------- 3
+\begin{frame}{Ba kiến trúc: Căn nguyên của sự đánh đổi}
 \begin{columns}[T]
-\begin{column}{0.5\linewidth}
-\begin{enumerate}\setlength{\itemsep}{6pt}
-\item \MCU: đặc tính, điểm mạnh, điểm yếu, ứng dụng
-\item \FPGA: đặc tính, điểm mạnh, điểm yếu, ứng dụng
-\item \SoC: đặc tính, điểm mạnh, điểm yếu, ứng dụng
-\item \textbf{So sánh}: số liệu tài liệu, thí nghiệm của nhóm, ma trận quyết định
-\item Kết luận
-\end{enumerate}
+\begin{column}{0.31\linewidth}\centering
+\anh[0.82\linewidth]{img/mcu_stm32f103.jpg}{\creditMcu}
+\raggedright\MCU\par\smallskip\footnotesize
+\textbf{Lõi nhỏ tuần tự} (Cortex-M), flash và SRAM trên chip\\
+\textbf{Không có MMU}, không chạy Linux\\
+Khởi động vài ms, ngắt dưới 1 µs\\
+Dòng nghỉ cỡ nA, giá vài USD
 \end{column}
-\begin{column}{0.46\linewidth}\small
-\soquyetdinh{Mỗi nền tảng được xét riêng trước, \textbf{theo cùng một khung}: là gì → mạnh ở đâu → yếu ở đâu → thắng ở lĩnh vực nào.}
-\soquyetdinh{Sau đó mới đặt ba nền tảng \textbf{cạnh nhau} trên cùng một trục số liệu và cùng một bài toán FIR.}
+\begin{column}{0.31\linewidth}\centering
+\anh[0.62\linewidth]{img/fpga_artix7.jpg}{\creditArtix}
+\raggedright\FPGA\par\smallskip\footnotesize
+\textbf{Mảng logic song song} (LUT, DSP, BRAM nối tùy ý)\\
+Thuật toán trải phẳng ra phần cứng: \textbf{1 mẫu/chu kỳ}\\
+Độ trễ cố định cỡ nano-giây\\
+Đổi lại: giá cao, lập trình HDL
+\end{column}
+\begin{column}{0.31\linewidth}\centering
+\anh[0.82\linewidth]{img/soc_rpi4.jpg}{\creditRpi}
+\raggedright\SoC\par\smallskip\footnotesize
+\textbf{Lõi CPU lớn} (Cortex-A) có MMU, cache, GPU, codec\\
+Chạy \textbf{Full Linux}: driver, mạng, AI có sẵn\\
+Đổi lại: độ trễ không tiền định\\
+Công suất nghỉ vài Watt
+\end{column}
+\end{columns}
+\vfill
+\centering\scriptsize\textcolor{cInk2}{Khi cần cả hệ điều hành lẫn timing cứng: tích hợp CPU + FPGA trên cùng một chip (\textbf{phương án lai Zynq})}
+\end{frame}
+
+% ---------------------------------------------------------------- 4
+\begin{frame}{Năng lực tính toán: CPU tuần tự vs. Dòng dữ liệu song song}
+\begin{columns}[T]
+\begin{column}{0.48\linewidth}\centering
+\anh[0.98\linewidth]{plots/lit_coremark.png}{Dữ liệu: ST overview, OpenBenchmarking (Pi 4). Nhóm vẽ lại.}
+\vspace{-4pt}
+\begin{beamercolorbox}[rounded=true,sep=3pt]{block body}\scriptsize
+\textbf{CPU tuần tự:} \SoC{} Pi 4 mạnh gấp \textbf{≈16×} \MCU{} H743. FPGA không chạy lệnh tuần tự.
+\end{beamercolorbox}
+\end{column}
+\begin{column}{0.48\linewidth}\centering
+\anh[0.98\linewidth]{plots/lit_mac.png}{Dữ liệu: Lee \& Seshia mục 8.1; datasheet XA Artix-7. Nhóm vẽ lại.}
+\vspace{-4pt}
+\begin{beamercolorbox}[rounded=true,sep=3pt]{block body}\scriptsize
+\textbf{Lọc video 1080p:} \MCU{} mạnh nhất chỉ đạt ≈29\% nhu cầu; \FPGA{} chỉ dùng ≈3,5\% DSP gánh trọn 100\% dòng dữ liệu.
+\end{beamercolorbox}
+\end{column}
+\end{columns}
+\vfill
+\scriptsize\centering\textcolor{cInk2}{Arucu \& Iliev (2025): FIR trên FPGA nhanh hơn Cortex-A9 \textbf{≈27×} và tốn ít năng lượng hơn \textbf{≈95–190×} \nhan{tính}.}
+\end{frame}
+
+% ---------------------------------------------------------------- 5
+\begin{frame}{Độ trễ xấu nhất và Công suất khi nghỉ theo tài liệu}
+\begin{columns}[T]
+\begin{column}{0.48\linewidth}\centering
+\anh[0.98\linewidth]{plots/lit_latency.png}{Dữ liệu: AC6 (MCU, Linux); A-Team Insight, STAC-T0 (FPGA). Nhóm vẽ lại.}
+\vspace{-4pt}
+\begin{beamercolorbox}[rounded=true,sep=3pt]{block body}\scriptsize
+\textbf{Độ trễ xấu nhất:} Mỗi nền tảng cách nhau 1–2 bậc độ lớn (FPGA: ns $\rightarrow$ MCU: µs $\rightarrow$ Linux RT: 30–80 µs $\rightarrow$ Linux thường: vài ms).
+\end{beamercolorbox}
+\end{column}
+\begin{column}{0.48\linewidth}\centering
+\anh[0.98\linewidth]{plots/lit_idle_power.png}{Dữ liệu: ST H743, Arrow (U5), TechFeed (Pi 4). Nhóm vẽ lại.}
+\vspace{-4pt}
+\begin{beamercolorbox}[rounded=true,sep=3pt]{block body}\scriptsize
+\textbf{Công suất nghỉ:} MCU Standby 300 nA vs SoC 3 W ($\Delta$ \textbf{≈3 triệu lần}). Giá: MCU £9–12 · SoC \$35 · FPGA €144.
+\end{beamercolorbox}
 \end{column}
 \end{columns}
 \end{frame}
 
-% ================================================================ 1. MCU
-\phan{1}{MCU}{Vi điều khiển: nhỏ, rẻ, tiết kiệm điện, đúng giờ}{cMCU}
-
-\begin{frame}{\MCU{} là gì?}
+% ---------------------------------------------------------------- 6
+\begin{frame}{Phương án lai CPU + FPGA: ADAS và điều khiển công nghiệp}
 \begin{columns}[T]
-\begin{column}{0.58\linewidth}\small
+\begin{column}{0.65\linewidth}\small
 \begin{itemize}\setlength{\itemsep}{4pt}
-\item Một chip gồm \textbf{lõi CPU nhỏ} (ARM Cortex-M), \textbf{flash}, \textbf{SRAM} và \textbf{ngoại vi}: timer, ADC, PWM, UART, SPI, I²C
-\item Chạy \textbf{bare-metal} hoặc \textbf{RTOS}, lập trình bằng C, truy cập thanh ghi trực tiếp (Lecture 2)
-\item Thực thi \textbf{tuần tự}: mỗi chu kỳ làm một việc
-\item \textbf{Không có MMU}, nên không chạy được Linux
-\item Board nhóm dùng: Blue Pill STM32F103C6, Cortex-M3 72 MHz
+\item Bài toán cần \textbf{cả} hệ điều hành phong phú \textbf{lẫn} timing cứng hoặc xử lý song song tốc độ cao.
+\item \textbf{Zynq UltraScale+:} gom trên một chip 4×A53 chạy Linux, 2×R5 lockstep chạy real-time, và fabric FPGA.
+\item \textbf{Lecture 3, Option \#2:} CPU lo tính toán mềm dẻo, FPGA giữ nhịp cơ cấu chấp hành (actuator) độc lập kể cả khi CPU bận.
+\item FIR trên SoC FPGA+ARM nhanh gấp \textbf{8,86×} ARM đơn, giá/hiệu năng tốt nhất trong các cấu hình được thử \nhan{nguồn}.
 \end{itemize}
 \end{column}
-\begin{column}{0.38\linewidth}\centering
-\anh[0.95\linewidth]{img/mcu_stm32f103.jpg}{\creditMcu}
-\footnotesize Board Blue Pill (họ STM32F103)
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{\MCU: điểm mạnh và điểm yếu}
-\manhyeu{cMCU}{%
-  \item \textbf{Rẻ}: H743 £9–12/chip; dòng F103 chỉ vài USD \nhan{nguồn}
-  \item \textbf{Cực tiết kiệm khi nghỉ}: STM32U5 300 nA, H743 2,43 µA ở Standby \nhan{nguồn}; pin CR2032 dùng hơn 10 năm (TI)
-  \item \textbf{Đúng giờ}: ngắt bare-metal 1–3 µs \nhan{nguồn: AC6}; nhóm đo: \expMcuIrqRange{} ns \nhan{đo}
-  \item \textbf{Khởi động trong vài ms}, chạy được ngay khi cấp điện
-  \item \textbf{Có chứng nhận an toàn}: AURIX đạt ASIL-D, AEC-Q100 Grade 0 chịu tới 150~°C
-  \item \textbf{Ra thị trường nhanh} với chức năng đơn giản, cố định (Lecture 2)
-}{%
-  \item \textbf{Hiệu năng thấp}: CoreMark 608–2\,424 \nhan{nguồn}
-  \item \textbf{Không đủ sức cho xử lý song song}: H743 chỉ ≈0,48 G MAC/s, bằng ≈29\% nhu cầu của bài lọc video \nhan{tính}
-  \item \textbf{Không có Linux}: phải tự viết TCP/IP, file system, driver camera
-  \item \textbf{Worst-case do phần mềm quyết định}: thêm một ngắt ưu tiên cao 20 µs là độ trễ lên \expMcuIrqHogMax{} µs \nhan{đo}
-  \item M3 \textbf{không có SIMD}: bản nhanh nhất vẫn mất \expMcuBestCps{} chu kỳ/mẫu, CMSIS-DSP không nhanh hơn C \nhan{đo}
-}
-\end{frame}
-
-\begin{frame}{\MCU{} thắng ở đâu: ECU ô tô}
-\begin{columns}[T]
-\begin{column}{0.55\linewidth}\footnotesize
-\begin{itemize}
-\item Xe phổ thông có 25–35 MCU, xe sang 60–70
-\item AURIX TC3xx: 4/6 lõi chạy \textbf{lockstep}, nhắm tới \textbf{ASIL-D} (ISO 26262), dùng cho powertrain và inverter xe điện
-\item AEC-Q100 Grade 0: chạy được từ \textbf{−40 đến 150~°C}; NXP S32K14xW cam kết cung ứng 15 năm
-\item Khởi động vài ms, ngắt dưới 1 µs, giá vài USD
-\end{itemize}
-\centering\anh[0.36\linewidth]{img/app_ecu.jpg}{\creditEcu}
-\end{column}
-\begin{column}{0.42\linewidth}\small
-\soquyetdinh{\textbf{Vì sao không chọn \SoC:} Linux khởi động lâu, độ trễ không xác định}
-\soquyetdinh{\textbf{Vì sao không chọn \FPGA:} đắt; cấu hình nằm trong SRAM nên dễ bị lỗi bức xạ (SEU); khó chứng nhận cho hàng triệu xe}
-\soquyetdinh{\textbf{Ưu thế dừng ở:} ADAS và giải trí dùng SoC; xu hướng domain controller gom nhiều ECU thành ít bộ hơn}
-\end{column}
-\end{columns}
-\par\vspace{2pt}\tiny\textcolor{cInk2}{Cũng chiếm ưu thế: điều khiển động cơ FOC (dưới 21 µs/50 µs), cảm biến chạy pin (300 nA, hơn 10 năm trên pin CR2032), đồ gia dụng}
-\end{frame}
-
-% ================================================================ 2. FPGA
-\phan{2}{FPGA}{Mạch logic khả trình: song song thật, độ trễ cố định}{cFPGA}
-
-\begin{frame}{\FPGA{} là gì?}
-\begin{columns}[T]
-\begin{column}{0.55\linewidth}\small
-\begin{itemize}\setlength{\itemsep}{4pt}
-\item Một mảng hàng nghìn \textbf{logic cell} (LUT + flip-flop), cùng khối \textbf{DSP} (nhân-cộng) và \textbf{BRAM}, nối với nhau tùy ý
-\item Không chạy chương trình: thuật toán được \textbf{``trải ra không gian''}, mỗi phép tính có một mạch riêng chạy đồng thời
-\item Mô tả bằng \textbf{HDL} (Verilog, VHDL); cấu hình nằm trong SRAM nên \textbf{nạp lại được}
-\item Board nhóm dùng: Arty Z7-20, phần PL của XC7Z020 (220 DSP48E1, 53\,200 LUT); FIR của nhóm chạy \textbf{thuần LUT, 0 DSP}
-\end{itemize}
-\end{column}
-\begin{column}{0.41\linewidth}\centering
-\anh[0.95\linewidth]{img/fpga_cell.png}{\creditCell}
-\footnotesize Một logic cell: LUT, bộ cộng, flip-flop\par\medskip
-\anh[0.45\linewidth]{img/fpga_artix7.jpg}{\creditArtix}
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{\FPGA: điểm mạnh và điểm yếu}
-\manhyeu{cFPGA}{%
-  \item \textbf{Song song thật}: 220–240 DSP ≈44–48 G MAC/s ở 200 MHz \nhan{tính}; XC7A100T công bố tối đa 264 G \nhan{nguồn}
-  \item \textbf{1 mẫu/chu kỳ}: FIR của nhóm đạt \expFpgaSpc{} mẫu/chu kỳ \nhan{\expFpgaLabel}
-  \item \textbf{Độ trễ cố định, cỡ ns}: tick-to-trade 13,9 ns \nhan{nguồn}; pipeline của nhóm \expFpgaLatCycles{} chu kỳ = \expFpgaLatNs{} ns
-  \item \textbf{Tiết kiệm năng lượng cho mỗi phép tính}: FIR trên FPGA tốn ít hơn CPU ≈95–190× \nhan{tính, Arucu \& Iliev}
-  \item \textbf{I/O nối thẳng vào chân chip}, và \textbf{nạp lại được} khi chuẩn thay đổi
-}{%
-  \item \textbf{Đắt}: XC7A100T (dòng Artix-7) €143,90/chip \nhan{nguồn}
-  \item \textbf{Khó lập trình}: mọi phép toán phải tự mô tả ở mức phần cứng (Arucu \& Iliev)
-  \item \textbf{Linh hoạt giảm}: thêm FPGA hạ độ linh hoạt từ ``Cao'' xuống ``Trung bình'' (Lecture 3)
-  \item \textbf{Không có OS}: network stack hay giao diện người dùng đều phải tự làm
-  \item \textbf{Không thắng ở bài nhỏ}: một lõi CPU desktop lọc FIR 16-tap được ≈140 MSPS \nhan{đo, x86 tham chiếu}
-}
-\end{frame}
-
-\begin{frame}{\FPGA{} thắng ở đâu: dòng dữ liệu song song và tạo mẫu chip}
-\footnotesize\textcolor{cInk2}{``Tính toán song song'' nói chung thì GPU phổ biến hơn. FPGA thắng khi dữ liệu \textbf{chảy liên tục từ ADC}, cần \textbf{độ trễ cố định}, và chuẩn còn thay đổi hoặc số lượng không đủ lớn để làm ASIC.}
-\begin{columns}[T]
-\begin{column}{0.55\linewidth}\footnotesize
-\begin{itemize}
-\item \textbf{Siêu âm y tế:} beamforming 128–1024 kênh, 4,83 GS/s trên một FPGA; nối thẳng với front-end analog
-\item \textbf{Trạm 5G (radio unit):} low-PHY và DFE trên RFSoC hoặc Agilex; chuẩn O-RAN còn đổi nên cần nạp lại được
-\item \textbf{Tạo mẫu ASIC:} HAPS ghép nhiều FPGA chạy RTL tới 1,6 tỉ cổng trước khi đúc chip
-\item \textbf{HFT:} tick-to-trade 13,9 ns
-\end{itemize}
-\centering\anh[0.18\linewidth]{img/app_ultrasound.jpg}{\creditUltra}
-\end{column}
-\begin{column}{0.42\linewidth}\small
-\soquyetdinh{\textbf{Vì sao không chọn \MCU:} thiếu ≈3,5× năng lực dù đạt hiệu suất 100\%}
-\soquyetdinh{\textbf{Vì sao không chọn \SoC:} có thể đủ thông lượng nhờ SIMD/GPU, nhưng mất tính xác định và tốn điện}
-\soquyetdinh{\textbf{Ưu thế dừng ở:} số lượng lớn và thuật toán ổn định thì ASIC thắng (ISP, modem trong điện thoại)}
-\end{column}
-\end{columns}
-\end{frame}
-
-% ================================================================ 3. SoC
-\phan{3}{SoC}{Hệ thống trên chip: CPU mạnh + Linux + khối tăng tốc}{cSoC}
-
-\begin{frame}{\SoC{} là gì?}
-\begin{columns}[T]
-\begin{column}{0.56\linewidth}\small
-\begin{itemize}\setlength{\itemsep}{4pt}
-\item Lõi \textbf{ứng dụng} (ARM Cortex-A) có \textbf{MMU} và \textbf{cache}, cùng GPU, bộ giải mã video và khối tăng tốc mạng, tất cả trên một chip
-\item Chạy \textbf{Linux}: driver, network stack, file system có sẵn (Lecture 2)
-\item Khối cứng chuyên dụng (xử lý gói tin, ISP, NPU, modem) làm phần nặng; CPU lo phần điều khiển
-\item Ví dụ nhóm dùng: Raspberry Pi 4, 4×Cortex-A72 1,8 GHz
-\end{itemize}
-\end{column}
-\begin{column}{0.4\linewidth}\centering
-\anh[0.95\linewidth]{img/soc_rpi4.jpg}{\creditRpi}
-\footnotesize Raspberry Pi 4 Model B
-\end{column}
-\end{columns}
-\end{frame}
-
-\begin{frame}{\SoC: điểm mạnh và điểm yếu}
-\manhyeu{cSoC}{%
-  \item \textbf{CPU mạnh nhất trong ba nền tảng}: Pi 4 đạt CoreMark 38\,200, gấp ≈16× H743 \nhan{nguồn}
-  \item \textbf{Có Linux}: camera chạy ngay qua V4L2, mạng, file system, cập nhật từ xa
-  \item \textbf{Tích hợp khối cứng}: router xử lý gói tin 37,5 Mpps; điện thoại có NPU, ISP, modem 5G \nhan{nguồn}
-  \item \textbf{Board rẻ}: Pi 4 \$35 khi ra mắt \nhan{nguồn}
-  \item \textbf{Ra thị trường nhanh} với sản phẩm nhiều tính năng, có kết nối (Lecture 2)
-}{%
-  \item \textbf{Độ trễ không xác định}: PREEMPT\_RT 30–80 µs, Linux thường vài ms \nhan{nguồn: AC6}
-  \item \textbf{Tốn điện ngay cả khi rảnh}: Pi 4 ≈3 W cả board, ≈7 W lúc đỉnh \nhan{nguồn}
-  \item \textbf{Khởi động lâu}, phần mềm phức tạp (kernel, driver, bảo mật)
-  \item \textbf{Yếu với thời gian thực cứng} nếu không có bản vá real-time (Lecture 2)
-}
-\end{frame}
-
-\begin{frame}{\SoC{} thắng ở đâu: router Wi-Fi và điện thoại}
-\begin{columns}[T]
-\begin{column}{0.55\linewidth}\footnotesize
-\begin{itemize}
-\item \textbf{Router:} Qualcomm IPQ = CPU chạy Linux/OpenWrt + Wi-Fi + switch + \textbf{khối xử lý gói tin cứng} (37,5 Mpps) + mã hóa
-\item \textbf{Điện thoại:} Snapdragon 8 Elite = CPU + GPU + NPU + ISP + modem 5G, chip 3 nm
-\item Linux lo điều khiển (control plane), khối cứng lo dữ liệu (data plane)
-\end{itemize}
-\hfill\begin{minipage}[t]{0.22\linewidth}\centering\anh{img/app_router.jpg}{\creditRouter}\end{minipage}\hspace{0.06\linewidth}%
-\begin{minipage}[t]{0.22\linewidth}\centering\anh{img/app_phone_soc.jpg}{\creditPhone}\end{minipage}\hfill\null
-\end{column}
-\begin{column}{0.42\linewidth}\small
-\soquyetdinh{\textbf{Vì sao không chọn \MCU:} không có MMU nên không chạy Linux; phải tự viết lại TCP/IP stack}
-\soquyetdinh{\textbf{Vì sao không chọn \FPGA:} viết cả network stack và giao diện bằng HDL quá đắt cho thiết bị tiêu dùng}
-\soquyetdinh{\textbf{Ưu thế dừng ở:} điều khiển thời gian thực cứng, nên trong máy vẫn có thêm MCU nhỏ}
-\end{column}
-\end{columns}
-\par\vspace{2pt}\tiny\textcolor{cInk2}{Cũng chiếm ưu thế: camera IP, TV và set-top box, gateway IoT, giải trí trên xe}
-\end{frame}
-
-\begin{frame}{Khi cần cả hai: phương án lai CPU + FPGA}
-\begin{columns}[T]
-\begin{column}{0.66\linewidth}\small
-\begin{itemize}
-\item Bài toán cần \textbf{cả} hệ điều hành phong phú \textbf{lẫn} timing hoặc xử lý song song cứng (ADAS, điều khiển công nghiệp)
-\item Zynq UltraScale+ gom trên một chip: 4×A53 chạy Linux, 2×R5 lockstep chạy real-time, và fabric FPGA
-\item Lecture 3, Option \#2: CPU lo tính toán mềm dẻo, FPGA giữ timing actuator kể cả khi CPU bận
-\item FIR trên SoC FPGA+ARM nhanh gấp 8,86× ARM đơn, giá/hiệu năng tốt nhất trong các cấu hình được thử \nhan{nguồn}
-\end{itemize}
-\end{column}
-\begin{column}{0.3\linewidth}\centering
+\begin{column}{0.31\linewidth}\centering
 \anh[0.9\linewidth]{img/hybrid_zynq.jpg}{\creditZynq}
 \scriptsize Zynq UltraScale+: Arm + FPGA trên một chip
 \end{column}
 \end{columns}
 \vfill
-\soquyetdinh{\textbf{Cái giá:} chi phí cao hơn và linh hoạt thấp hơn so với một CPU đơn}
+\soquyetdinh{\textbf{Cái giá:} chi phí thiết kế và giá chip cao hơn, độ linh hoạt phần mềm thấp hơn so với CPU đơn.}
 \end{frame}
 
-% ================================================================ 4. SO SANH
-\phan{4}{So sánh}{Đặt ba nền tảng cạnh nhau trên cùng một trục}{black}
-
-\begin{frame}{Tổng quan đánh đổi}
+% ---------------------------------------------------------------- 7
+\begin{frame}{Thí nghiệm: một bài toán, ba nền tảng}
+\textbf{FIR 16-tap Q15}, 1024 mẫu: bậc thang, giá trị biên, mẫu ép bão hòa, mẫu ngẫu nhiên (seed 3053)\par
+Mọi nền tảng phải khớp \textbf{từng mẫu (0 sai lệch)} với golden model viết bằng Python\par\smallskip
 \footnotesize
-\begin{tabularx}{\linewidth}{@{}l Y Y Y@{}}
-\toprule
-Tiêu chí & \MCU & \FPGA & \SoC\\
-\midrule
-CPU tuần tự (CoreMark) & Thấp: 608–2\,424 & Không áp dụng & \textbf{Cao: 38\,200} (Pi 4)\\
-Thông lượng song song & ≈0,48 G MAC/s \nhan{tính} & \textbf{≈48 G MAC/s} \nhan{tính} & Trung bình (SIMD, GPU)\\
-Độ trễ xấu nhất & 1–3 µs & \textbf{cỡ ns} & 30 µs – vài ms\\
-Công suất khi nghỉ & \textbf{cỡ µW} (chip) & chưa có số & ≈3 W (board)\\
-Giá & \textbf{£9–12/chip} & €144/chip & \$35/board\\
-Lập trình & C, thanh ghi & HDL, khó nhất & \textbf{Linux, nhiều thư viện}\\
-Linh hoạt / ra thị trường & Nhanh với bài đơn giản & Thấp nhất & Nhanh với bài nhiều tính năng\\
-\bottomrule
-\end{tabularx}
-\par\medskip
-\centering\scriptsize\textcolor{cInk2}{Nguồn: ST, OpenBenchmarking, AC6, STAC-T0, RS, Farnell, AnandTech, Lecture 2–3. Chữ đậm là nền tảng thắng ở tiêu chí đó. Các slide sau đi vào từng tiêu chí.}
-\end{frame}
-
-\begin{frame}{Hiệu năng CPU thuần: CoreMark}
-\centering
-\anh[0.86\linewidth]{plots/lit_coremark.png}{Dữ liệu: ST product overview; ST STM32H743; OpenBenchmarking (Pi 4, tổng 4 lõi). Nhóm vẽ lại.}
-\vfill
-\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small \SoC{} Pi 4 mạnh gấp ≈16× \MCU{} H743 về CPU. CoreMark không áp dụng cho \FPGA, vì FPGA không chạy chương trình tuần tự.\end{beamercolorbox}
-\end{frame}
-
-\begin{frame}{Thông lượng song song: bài lọc video 1080p}
-\centering
-\anh[0.86\linewidth]{plots/lit_mac.png}{Dữ liệu: Lee \& Seshia mục 8.1 (nhu cầu); datasheet XA Artix-7 (264 G). Giá trị [tính] theo giả thiết trong bài. Nhóm vẽ lại.}
-\vfill
-\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small \MCU{} chỉ đạt ≈29\% nhu cầu dù hiệu suất 100\%; \FPGA{} chỉ dùng ≈3,5\% năng lực \nhan{tính}\end{beamercolorbox}
-\end{frame}
-
-\begin{frame}{Bằng chứng đã công bố: FIR trên FPGA, GPU và CPU}
-\centering
-\anh[0.86\linewidth]{plots/lit_fir_arucu.png}{Dữ liệu: Arucu \& Iliev, J. Low Power Electron. Appl. 15(3):40, 2025. Nhóm vẽ lại.}
-\vfill
-\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small \FPGA{} nhanh hơn Cortex-A9 ≈27× và tốn ít năng lượng hơn ≈95–190× \nhan{tính}.\\[2pt]\scriptsize Công suất CPU và GPU là ước tính của tác giả; bài không có MCU.\end{beamercolorbox}
-\end{frame}
-
-\begin{frame}{Độ trễ xấu nhất theo tài liệu}
-\centering
-\anh[0.86\linewidth]{plots/lit_latency.png}{Dữ liệu: AC6 (MCU, Linux); A-Team Insight, STAC-T0 (FPGA). ``Vài ms'' không có số chính xác nên vẽ mờ. Nhóm vẽ lại.}
-\vfill
-\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small Mỗi nền tảng cách nhau khoảng 1–2 bậc độ lớn. Các phép đo khác bản chất nhau, chỉ so bậc độ lớn.\end{beamercolorbox}
-\end{frame}
-
-\begin{frame}{Công suất khi nghỉ và giá}
-\centering
-\anh[0.86\linewidth]{plots/lit_idle_power.png}{Dữ liệu: ST STM32H743; Arrow (STM32U5); TechFeed (Pi 4). Công suất MCU = dòng × 3,3 V [tính]. Nhóm vẽ lại.}
-\vfill
-\begin{beamercolorbox}[rounded=true,sep=5pt]{block body}\centering\small Chênh ≈3 triệu lần: lý do \MCU{} thống trị thiết bị chạy pin.\\[2pt] Giá: \MCU{} £9–12/chip · \SoC{} \$35/board · \FPGA{} €144/chip \nhan{nguồn; so chip với board}\end{beamercolorbox}
-\end{frame}
-
-\begin{frame}{Thí nghiệm của nhóm: một bài toán, ba nền tảng}
-\textbf{FIR 16-tap Q15}, 1024 mẫu: bậc thang, giá trị biên, mẫu ép bão hòa, mẫu ngẫu nhiên\par
-Mọi nền tảng phải khớp \textbf{từng mẫu} với golden model viết bằng Python\par\medskip
-\small
 \begin{tabularx}{\linewidth}{@{}l l Y@{}}
 \toprule
-\MCU  & STM32F103, Cortex-M3 & 4 phiên bản (C, CMSIS-DSP), đếm chu kỳ bằng DWT; độ trễ ngắt trong 3 kịch bản\\
-\FPGA & Arty Z7-20 (XC7Z020 PL) & Pipeline 7 tầng thuần LUT (0 DSP); tự kiểm ngay trên chip ở 125 MHz; Vivado cho Fmax và công suất\\
-\SoC  & Raspberry Pi 4 (A72) & Cùng mã C, \texttt{-O2} và \texttt{-O3} (NEON); \texttt{cyclictest}. Trước khi có board: QEMU kiểm tra đúng bit và đếm lệnh/mẫu\\
+Nền tảng & Phần cứng & Phương pháp đo đạc thực nghiệm\\
+\midrule
+\MCU  & STM32F103C6 @ 72 MHz (Cortex-M3) & Đo thật: 4 bản C/CMSIS, đếm chu kỳ bằng DWT; ngắt TIM2 trong 3 kịch bản tải\\
+\FPGA & Arty Z7-20 @ 125 MHz (XC7Z020 PL) & Đo thật: Pipeline 7 tầng thuần LUT (0 DSP); tự kiểm ngay trên chip qua JTAG\\
+\SoC  & Cortex-A72 @ 1,8 GHz (QEMU ARMv8) & Mô phỏng: Chu kỳ lệnh QEMU AArch64, ước lượng thông lượng IPC 1–3; trễ từ AC6\\
 \bottomrule
 \end{tabularx}
-\par\medskip
-\textcolor{cInk2}{Cortex-M3 không có lệnh SIMD (SMLAD), nên CMSIS-DSP không được tăng tốc kiểu SIMD như trên M4}
+\par\smallskip
+\textcolor{cInk2}{\scriptsize Cortex-M3 không có lệnh SIMD (SMLAD), nên CMSIS-DSP trên M3 không được tăng tốc kiểu SIMD như trên M4/M7.}
 \end{frame}
 
-\begin{frame}{Kết quả: thông lượng}
-\centering\chart[0.92\linewidth]{e5_throughput.png}
-\par\small
-\MCU: \expMcuBestMsps{} MSPS \nhan{đo} (\FPGA{} gấp \expRatioFpgaMcu×) \quad
-\FPGA: \expFpgaSpc{} mẫu/chu kỳ, \expFpgaMsps{} MSPS \nhan{\expFpgaLabel} \quad
-\SoC: \expPiBestMsps{} MSPS \nhan{\expPiLabel; IPC 1–3: \expPiSimRange}
+% ---------------------------------------------------------------- 8
+\begin{frame}{Kết quả: thông lượng — FPGA vượt trội 375×}
+\centering\chart[0.85\linewidth]{e5_throughput.png}
+\par\smallskip\small
+\FPGA: \textbf{\expFpgaMsps{} MSPS} (\expFpgaSpc{} mẫu/chu kỳ @ 125 MHz) \nhan{\expFpgaLabel} \quad
+\SoC: \expPiBestMsps{} MSPS \nhan{\expPiLabel; IPC 1–3: \expPiSimRange} \quad
+\MCU: \textbf{\expMcuBestMsps{} MSPS} \nhan{đo}
+\vspace{2pt}
+\soquyetdinh{\textbf{Phát hiện kỹ thuật:} \FPGA{} nhanh gấp \textbf{\expRatioFpgaMcu×} bản tối ưu của MCU (và gấp 763× bản C cơ bản). Do thiếu SIMD, MCU chỉ đạt \textbf{\expMcuEff\%} so với giả thiết lý thuyết 1 MAC/chu kỳ.}
 \end{frame}
 
-\begin{frame}{Kết quả: độ trễ xấu nhất}
-\centering\chart[0.92\linewidth]{e5_worst_latency.png}
-\par\small\raggedright
-\MCU{} ngắt khi chạy FIR: \expMcuIrqRange{} ns · thêm ngắt ưu tiên cao hơn 20 µs: \expMcuIrqHogMax{} µs \nhan{đo}\\
-\FPGA{} pipeline: \expFpgaLatCycles{} chu kỳ = \expFpgaLatNs{} ns \nhan{\expFpgaLabel} \quad
+% ---------------------------------------------------------------- 9
+\begin{frame}{Kết quả: độ trễ xấu nhất và tính tiền định (Jitter)}
+\centering\chart[0.85\linewidth]{e5_worst_latency.png}
+\par\smallskip\small\raggedright
+\FPGA{} pipeline: \textbf{\expFpgaLatNs{} ns} (7 chu kỳ @ 125 MHz), Jitter = \textbf{0,00 ns} \nhan{\expFpgaLabel}\\
+\MCU{} ngắt khi rảnh: \expMcuIrqMin{} ns · khi chạy FIR: \expMcuIrqRange{} ns \nhan{đo}\\
 \SoC{} Linux thường: \expLinuxStdMaxU{} · PREEMPT\_RT: \expLinuxRtMaxU
+\vspace{2pt}
+\soquyetdinh{\textbf{Thí nghiệm phản biện đắt giá:} Khi thêm ngắt ưu tiên cao hơn chen ngang 20 µs, độ trễ ngắt MCU vọt lên tới \textbf{\expMcuIrqHogMax{} µs}. Worst-case của MCU do \textbf{kiến trúc phần mềm} quyết định, không phải chỉ do chip.}
 \end{frame}
 
+% ---------------------------------------------------------------- 10
+\begin{frame}{Thực nghiệm đặc biệt: FPGA thuần Soft-Logic (0 DSP)}
+\begin{columns}[T]
+\begin{column}{0.51\linewidth}\small
+\begin{itemize}\setlength{\itemsep}{3pt}
+\item \textbf{Câu hỏi thực tế:} \emph{``Nếu các khối DSP48E1 bị chiếm hết cho tác vụ khác, FPGA có lọc được không?''}
+\item Nhóm ép RTL chạy thuần soft-logic: \texttt{(* use\_dsp = "no" *)}, tổng hợp Vivado \texttt{-max\_dsp 0}.
+\item 16 bộ nhân song song và cây cộng 4 tầng 34-bit dựng hoàn toàn bằng \textbf{Slice LUTs + CARRY4}.
+\item Đóng timing an toàn: $\text{WNS} = \mathbf{+0{,}326\text{ ns}}$ ở 125 MHz ($F_{\max} \approx 134{,}6\text{ MHz}$).
+\item Tiêu thụ: \textbf{0,124 W} ($\approx \mathbf{0{,}99\text{ nJ/mẫu}}$), thấp hơn cả bản dùng DSP (0,129 W).
+\end{itemize}
+\end{column}
+\begin{column}{0.45\linewidth}\footnotesize
+\begin{tabularx}{\linewidth}{@{}l r r@{}}
+\toprule
+Tài nguyên & Đã dùng & Chiếm (\%) \\
+\midrule
+\textbf{DSP48E1} & \textbf{0 / 220} & \textbf{0,00\%} \\
+\textbf{Slice LUTs} & \textbf{\expFpgaLut{} / 53\,200} & \textbf{3,14\%} \\
+\textbf{Thanh ghi FF} & \textbf{\expFpgaFf{} / 106\,400} & \textbf{0,98\%} \\
+Block RAM & 2 / 140 & 1,43\% \\
+\bottomrule
+\end{tabularx}
+\par\vspace{4pt}
+\soquyetdinh{\textbf{Ý nghĩa:} Chỉ cần \textbf{~3,1\% logic thường} của XC7Z020 đã đạt 125 MSPS, dành trọn 220 khối DSP cho tác vụ khác.}
+\end{column}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------- 11
 \begin{frame}{Kiểm chứng chéo với tài liệu}
-\scriptsize\renewcommand{\arraystretch}{1.12}
+\footnotesize
 \begin{tabularx}{\linewidth}{@{}Y Y Y@{}}
 \toprule
-Câu hỏi & Nhóm đo được & Tài liệu nói\\
+Câu hỏi kiểm chứng & Nhóm đo được & Tài liệu nói\\
 \midrule
-MCU đạt được bao nhiêu so với ``1 MAC/chu kỳ''? & \expMcuEff\% (\expMcuBestCps{} chu kỳ/mẫu) & PLAN giả định 100\%; flash cần 2 wait state ở 72 MHz, dữ liệu \texttt{const} đọc từ flash\\
-Độ trễ ngắt MCU bare-metal & \expMcuIrqRange{} ns & 1–3 µs (AC6)\\
-FPGA nhanh hơn MCU / CPU bao nhiêu lần? & \expRatioFpgaMcu× (vs MCU); \expRatioFpgaPi× (vs Pi 4, \expPiLabel) & ≈27× (so với A9, Arucu \& Iliev)\\
-SoC chạy đúng trên ARMv8 (Cortex-A72)? & \expPiSimPass{} (QEMU), \expPiInsn{} lệnh/mẫu & —\\
-Tài nguyên FPGA cho FIR 16-tap (thuần LUT) & \expFpgaDsp/220 DSP · \expFpgaLut{} LUT · \expFpgaFf{} FF & Fmax ≈ \expFpgaFmax{} MHz, \expFpgaPower{} W \nhan{ước lượng công cụ}\\
+MCU đạt được bao nhiêu so với ``1 MAC/chu kỳ''? & \textbf{\expMcuEff\%} (\expMcuBestCps{} chu kỳ/mẫu) & PLAN giả định 100\% (≈0,48 G MAC/s trên H743)\\
+FPGA nhanh hơn MCU / CPU bao nhiêu lần? & \textbf{\expRatioFpgaMcu×} (vs MCU); \expRatioFpgaPi× (vs Pi 4) & ≈27× so với Cortex-A9 (Arucu \& Iliev)\\
+Độ trễ ngắt MCU bare-metal & \expMcuIrqRange{} ns (rảnh/tải) & 1–3 µs (AC6)\\
+Worst-case MCU khi có ngắt lồng nhau 20 µs & \textbf{\expMcuIrqHogMax{} µs} & Thiết kế phần mềm quyết định worst-case\\
+Tăng từ 16 lên 64 tap thì sao? & MCU chậm đi tuyến tính 4× (~80 kS/s) & FPGA giữ nguyên 125 MSPS (cách biệt >1\,500×)\\
 \bottomrule
 \end{tabularx}
-\par\smallskip\footnotesize
-\textbf{Quan sát phụ:} một lõi CPU x86 lọc được ≈140 MSPS. FPGA không thắng nhờ tốc độ thô ở bài nhỏ, mà nhờ \textbf{thông lượng giữ nguyên khi tăng số tap}, \textbf{độ trễ cố định} và \textbf{công suất thấp}.
+\vfill
+\textbf{Quan sát phụ:} Một lõi CPU x86 desktop lọc được ~140 MSPS. FPGA không thắng nhờ tốc độ thô ở bài nhỏ, mà nhờ \textbf{thông lượng giữ nguyên khi tăng tap}, \textbf{độ trễ cố định} và \textbf{công suất thấp}.
 \end{frame}
 
-\begin{frame}{Tóm tắt: mỗi nền tảng thắng ở đâu}
-\small
-\begin{tabularx}{\linewidth}{@{}l Y Y Y@{}}
-\toprule
-& Lĩnh vực đặc trưng & Yếu tố quyết định & Vì sao không chọn hai nền tảng kia\\
-\midrule
-\MCU  & ECU ô tô, động cơ, cảm biến chạy pin & ASIL-D, 150~°C, dòng nghỉ cỡ nA, vài USD & SoC chậm khởi động và không xác định; FPGA đắt\\
-\FPGA & Siêu âm, 5G radio, tạo mẫu ASIC, HFT & Song song + I/O trực tiếp + tái cấu hình & MCU thiếu sức; SoC không xác định\\
-\SoC  & Router Wi-Fi, điện thoại, camera IP & Linux + khối tăng tốc cứng & MCU không có MMU; FPGA tốn công HDL\\
-Lai   & ADAS, công nghiệp & OS + timing cứng & Một nền tảng đơn không đủ\\
-\bottomrule
-\end{tabularx}
+% ---------------------------------------------------------------- 12
+\begin{frame}{Bản đồ ứng dụng: Mỗi nền tảng thống trị ở đâu?}
+\begin{columns}[T]
+\begin{column}{0.48\linewidth}
+\begin{beamercolorbox}[rounded=true,sep=4pt]{block body}\footnotesize
+\textbf{\MCU: ECU ô tô, động cơ, cảm biến pin}\\
+• AURIX lockstep đạt \textbf{ASIL-D}, AEC-Q100 150~°C\\
+• Khởi động vài ms, ngắt < 1 µs, giá vài USD\\
+• \emph{Vì sao chọn:} SoC chậm khởi động \& không xác định; FPGA đắt.
+\end{beamercolorbox}
+\vspace{3pt}
+\begin{beamercolorbox}[rounded=true,sep=4pt]{block body}\footnotesize
+\textbf{\SoC: Router Wi-Fi, điện thoại, camera IP}\\
+• Qualcomm IPQ: Linux + khối xử lý gói 37,5 Mpps\\
+• Snapdragon: CPU + GPU + NPU + 5G modem 3 nm\\
+• \emph{Vì sao chọn:} MCU không có MMU; FPGA tốn công HDL.
+\end{beamercolorbox}
+\end{column}
+\begin{column}{0.48\linewidth}
+\begin{beamercolorbox}[rounded=true,sep=4pt]{block body}\footnotesize
+\textbf{\FPGA: Siêu âm, 5G radio, tạo mẫu ASIC, HFT}\\
+• Siêu âm beamforming 128–1024 kênh ADC song song\\
+• Trạm 5G O-RAN nạp lại được; HFT tick-to-trade 13,9 ns\\
+• \emph{Vì sao chọn:} MCU thiếu sức; SoC trễ không xác định.
+\end{beamercolorbox}
+\vspace{3pt}
+\begin{beamercolorbox}[rounded=true,sep=4pt]{block body}\footnotesize
+\textbf{Lai: ADAS xe tự hành, Robot công nghiệp}\\
+• Zynq: Cortex-A (Linux/AI) + FPGA (bảo vệ timing cơ cấu)\\
+• \emph{Vì sao chọn:} Một nền tảng đơn lẻ không thể thỏa mãn cả hai.
+\end{beamercolorbox}
+\end{column}
+\end{columns}
 \end{frame}
 
-\begin{frame}{Ma trận quyết định}
-\small
+% ---------------------------------------------------------------- 13
+\begin{frame}{Ma trận quyết định chọn nền tảng}
+\footnotesize
 \begin{tabularx}{\linewidth}{@{}Y l Y@{}}
 \toprule
 Nếu bài toán\ldots & Chọn & Vì\\
 \midrule
-Chạy pin nhiều năm, tác vụ nhẹ & \MCU & 300 nA ở Standby\\
-Deadline vài chục µs, cần chứng nhận an toàn & \MCU & Ngắt dưới 1 µs; ASIL-D\\
-Trên ≈0,5 G MAC/s liên tục, I/O tốc độ cao & \FPGA{} / lai & 1 mẫu/chu kỳ, ≈44–48 G MAC/s\\
-Độ trễ cỡ ns & \FPGA & 13,9 ns\\
-Cần Linux, camera, mạng; timing mềm & \SoC & CoreMark gấp ≈16×; driver có sẵn\\
-Cần cả OS lẫn timing cứng & Lai & Zynq, Lecture 3\\
+Chạy pin nhiều năm, tác vụ nhẹ & \MCU & 300 nA ở Standby; hơn 10 năm trên pin CR2032\\
+Deadline vài chục µs, cần an toàn cứng & \MCU & Ngắt dưới 1 µs; tiêu chuẩn ASIL-D\\
+Cần Linux, camera, mạng, GUI; timing mềm & \SoC & CoreMark gấp ≈16× H743; driver có sẵn\\
+Trên ≈0,5 G MAC/s liên tục, I/O streaming cao & \FPGA{} / Lai & 1 mẫu/chu kỳ (E2), ≈44–48 G MAC/s\\
+Độ trễ cố định cỡ nano-giây & \FPGA & Pipeline 56 ns (0 jitter), HFT 13,9 ns\\
+Cần cả OS phong phú lẫn timing cứng ngắc & Lai & Zynq, Lecture 3 Option \#2\\
 \bottomrule
 \end{tabularx}
-\par\medskip\centering
-Muốn timing và thông lượng cao hơn thì phải trả bằng \textbf{giá cao hơn} và \textbf{linh hoạt thấp hơn}
+\par\smallskip\centering
+\soquyetdinh{\textbf{Quy luật cốt lõi:} Muốn timing và thông lượng cao hơn thì phải trả bằng \textbf{giá tiền cao hơn} và \textbf{độ linh hoạt phần mềm thấp hơn}.}
 \end{frame}
 
-% ================================================================ 5. KET LUAN
-\phan{5}{Kết luận}{}{black}
-
+% ---------------------------------------------------------------- 14
 \begin{frame}[plain]
 \vfill\centering
-{\Huge\bfseries ``Không có nền tảng tốt nhất,}\par\bigskip
-{\Large chỉ có nền tảng \textbf{đủ} cho con số quyết định của bài toán,\\ với chi phí thấp nhất.''}\par\medskip
-{\large\itshape\color{cInk2} — Nguyen Vo Hoang, Master's student, NTU}\par\vfill
-{\color{cInk2}Hỏi đáp}
+{\LARGE\bfseries ``Không có nền tảng nào là tốt nhất,}\par\smallskip
+{\Large chỉ có nền tảng \textbf{ĐỦ} cho con số quyết định của bài toán,\\ với chi phí thấp nhất.''}\par\medskip
+{\footnotesize\itshape\color{cInk2} — Thông điệp cốt lõi của đề tài}\par\bigskip
+\small
+\begin{tabularx}{0.88\linewidth}{@{}l Y@{}}
+\toprule
+\MCU  & Thắng về \textbf{giá}, \textbf{công suất nghỉ} (nA) và \textbf{chứng nhận an toàn}. Giới hạn ở tính toán tuần tự.\\
+\SoC  & Thắng khi cần \textbf{hệ điều hành Linux}, mạng và đồ họa. Giới hạn ở độ trễ không tiền định.\\
+\FPGA & Thắng khi cần \textbf{thông lượng song song} và \textbf{độ trễ nano-giây}. Giới hạn ở giá và độ phức tạp HDL.\\
+\bottomrule
+\end{tabularx}
+\vfill
+\end{frame}
+
+% ---------------------------------------------------------------- 15
+\begin{frame}[plain]
+\vfill\centering
+{\Huge\bfseries Cảm ơn Thầy Cô và các bạn}\par\bigskip
+{\Large Nhóm sẵn sàng nhận câu hỏi phản biện}\par\bigskip
+{\color{cInk2}CO3053 Hệ thống nhúng · HK261 · Đề tài 09}
 \vfill
 \end{frame}
 
 % ================================================================ PHU LUC
 \appendix
-\begin{frame}{Phụ lục: chuẩn bị cho câu hỏi}
-\small
-\begin{itemize}
-\item \textbf{``MCU đã tối ưu chưa?''} Có bản CMSIS-DSP. M3 không có SIMD, bản tốt nhất đạt \expMcuBestCps{} chu kỳ/mẫu.
-\item \textbf{``Jitter của FPGA bằng 0 thật à?''} Mô phỏng RTL không có thời gian thật. Trên chip, độ trễ cố định theo số chu kỳ, chỉ còn clock jitter cỡ ps.
-\item \textbf{``Sao so chip với board?''} Chỉ để so bậc độ lớn, và nhóm đã ghi rõ trên từng bảng.
-\item \textbf{``Công suất FPGA đo bằng gì?''} Không đo; đó là Vivado \texttt{report\_power} (vector-less) \nhan{ước lượng công cụ}.
-\item \textbf{``Sao không có NRE?''} Chưa có số công bố. Nhóm dùng thời gian thực tế viết bản C và bản HDL làm dẫn chứng định tính.
-\item \textbf{``Tăng lên 64 tap thì sao?''} MCU chậm đi khoảng 4×. FPGA vẫn 1 mẫu/chu kỳ, chỉ tốn thêm LUT/DSP và vài tầng pipeline.
+% ---------------------------------------------------------------- 16
+\begin{frame}{Phụ lục: Chuẩn bị cho câu hỏi phản biện}
+\footnotesize
+\begin{itemize}\setlength{\itemsep}{2pt}
+\item \textbf{``MCU đã tối ưu chưa? Sao không dùng M4/M7?''} Có bản CMSIS-DSP. M3 đại diện dòng giá rẻ không có SIMD. Cortex-M4/M7 có SIMD (\texttt{SMLAD}) nhanh hơn 3–4× (~50 chu kỳ/mẫu), nhưng vẫn chậm hơn FPGA hàng chục đến hàng trăm lần vì FPGA nhân 16 tap cùng lúc.
+\item \textbf{``Jitter của FPGA bằng 0 thật à?''} Đúng ở mức chu kỳ (cycle-accurate): tiền định tuyệt đối 7 chu kỳ. Ở mức vật lý tín hiệu, chỉ có phase jitter của thạch anh (cỡ pico-giây), không đáng kể so với mức nano/micro-giây.
+\item \textbf{``Công suất FPGA đo bằng gì?''} Vivado \texttt{report\_power} (vector-less) mang nhãn \nhan{ước lượng công cụ}, gồm cả công suất tĩnh 0,106 W.
+\item \textbf{``Tăng lên 64 tap thì sao?''} MCU chậm đi 4× (~80 kS/s). FPGA mở rộng cây cộng thêm 2 tầng (trễ tăng lên 9 chu kỳ = 72 ns), nhưng \textbf{thông lượng vẫn giữ nguyên 125 MSPS}. Cách biệt tăng từ 375× lên >1\,500×.
 \end{itemize}
 \end{frame}
 
-\begin{frame}{Nguồn chính}
-\scriptsize
-\begin{itemize}
-\item ST: STM32H7/F4/MP1 overview, STM32H743; OpenBenchmarking: Raspberry Pi 4
-\item Arucu \& Iliev, J. Low Power Electron. Appl., 2025 (FIR trên FPGA, GPU, CPU)
-\item AC6: độ trễ Linux PREEMPT\_RT; A-Team Insight: Exegy/AMD STAC-T0
-\item Embedded World 02/2026 (số MCU mỗi xe); Automotive World (AURIX TC3xx); Future Electronics (NXP S32K Grade 0)
-\item Macnica, CNX Software (Qualcomm IPQ); GSMArena (Snapdragon 8 Elite)
-\item Kou et al., 2023 (beamforming siêu âm trên FPGA); HPCwire (Fujitsu + Xilinx O-RAN); Intel (Agilex O-RU); Synopsys HAPS
-\item eeNews Europe (Zynq UltraScale+); Lecture 2, Lecture 3; Lee \& Seshia mục 8.1
-\end{itemize}
-\par\medskip
-Danh sách đầy đủ kèm đường link nằm trong báo cáo (\texttt{report.pdf}).
-\ifdefined\hcmuttemplate\par\smallskip\tiny\textcolor{cInk2}{Template slide dựa trên ``HCMUT-Slide'' của Nguyễn Quang Đức (Overleaf, CC BY 4.0).}\fi
-\end{frame}
-
-\begin{frame}{Nguồn hình ảnh}
+% ---------------------------------------------------------------- 17
+\begin{frame}{Phụ lục: Nguồn tài liệu \& Bản quyền hình ảnh}
 \tiny
-Ảnh chụp: Wikimedia Commons, giữ nguyên, chỉ thu nhỏ. Biểu đồ ghi ``Nhóm vẽ lại'' được dựng từ số liệu đã công bố, không chép hình gốc.
-\begin{itemize}\setlength{\itemsep}{0pt}
-\creditList
+\textbf{Tài liệu tham khảo chính:}
+\begin{itemize}\setlength{\itemsep}{1pt}
+\item ST: STM32H7/F4/MP1 overview, STM32H743; OpenBenchmarking: Raspberry Pi 4 CoreMark
+\item Arucu \& Iliev, J. Low Power Electron. Appl., 2025 (FIR trên FPGA, GPU, CPU)
+\item AC6: Độ trễ Linux PREEMPT\_RT; A-Team Insight: Exegy/AMD STAC-T0 (13,9 ns tick-to-trade)
+\item Embedded World 02/2026; Automotive World (AURIX TC3xx); Future Electronics (NXP S32K)
+\item Macnica, CNX Software (Qualcomm IPQ); GSMArena (Snapdragon 8 Elite)
+\item Kou et al., 2023 (Beamforming siêu âm FPGA); Synopsys (HAPS ASIC prototyping)
+\item Lee \& Seshia, \emph{Introduction to Embedded Systems}, mục 8.1–8.2; Lecture 2, Lecture 3.
 \end{itemize}
+\par\smallskip
+\textbf{Hình ảnh:} Wikimedia Commons (giấy phép mở Creative Commons ghi chú bên dưới mỗi ảnh). Biểu đồ dựng từ số liệu công bố.
 \end{frame}
